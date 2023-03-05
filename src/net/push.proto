@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package protocol;
+
+option go_package = "./;protocol";
+
+
+message Proto {
+    int32 ver = 1;
+    int32 op = 2; // 协议指令  比如心跳包 同步 发送 接收
+    int32 seq = 3; // 自增
+    bytes body = 4;
+}
+
+
+// 心跳 (请求结构与返回结构一致)
+message Heartbeat {
+    string body = 1;
+}
+
+// 广播 (弹幕,通知) (请求结构与返回结构一致)
+message Broadcast {
+   string body = 1;
+}
+
+// 订阅  (请求结构与返回结构一致)
+message WatchOps {
+    repeated int32 ops = 1;
+}
+
+
+// 游戏场景  (请求结构与返回结构一致)
+message Scene  {
+    int32 id = 1; 
+}
+
+
+// 游戏人数，同步限制  (请求结构与返回结构一致)
+message SyncLimit { 
+    int32 limit = 1; 
+}
+
+
+// 位置 (上报位置)
+message PosReq {
+    repeated int32 ops = 1;
+}
+
+message PosResp {
+    repeated PosReq data = 1; // 同步九宫格范围内所有人的坐标
+}
+
+// 在线人数  (请求结构与返回结构一致)
+message OnlineTotal  {
+    int32 total = 1; 
+}
+
+// 离线  (请求结构与返回结构一致)
+message Offline {
+    repeated int32 ops = 1;
+}
