@@ -1,7 +1,7 @@
 import  Player  from "./Player"; 
-import Enemy  from "./Enemy";
-
+import Enemy  from "./Enemy"; 
 import { EVENTS_NAME } from "./consts";
+import {onlinePlayers, SocketServer} from './net/SocketServer';
 
  
 export class GameScene extends Phaser.Scene {
@@ -12,13 +12,14 @@ export class GameScene extends Phaser.Scene {
      wallsLayer  = null
      groundLayer  = null
      chests  = null
-     enemies  = null
+     enemies  = null 
+     room = null
     constructor() {
         super("game-scene");
     }
 
     preload() {
-  
+        
     }
 
     create(props) {
@@ -40,17 +41,19 @@ export class GameScene extends Phaser.Scene {
         // 1. 先创建地图
         this.initMap(props.name);
 
-        this.player = new Player(this, this.wallsLayer, 100, 100, "张三"); // 创建玩家(自己)
+
+        this.initNetEvent()
+
         this.initChests() 
         this.initEnemies()
         this.initCamera()
- 
-        this.physics.add.collider(this.player, this.wallsLayer); 
+       
     }
+ 
  
     update() {
       this.bg.setPosition();
-      this.player.update();
+      this.player.update(this.room);
     }
     initMap(name) {
         this.bg = this.add.tileSprite(
@@ -58,27 +61,67 @@ export class GameScene extends Phaser.Scene {
           0,
           window.innerWidth,
           window.innerHeight,
-          "water"
+          "background"
         );
     
+        // 创建1个空地图
         this.map = this.make.tilemap({
           key: name,
           tileWidth: 16,
           tileHeight: 16,
         });
-        this.tileset = this.map.addTilesetImage("Grass", "Grass");
-        this.groundLayer = this.map.createStaticLayer("Ground", this.tileset, 0, 0);
-        this.wallsLayer = this.map.createStaticLayer("Walls", this.tileset, 0, 0); 
-        this.wallsLayer.setCollisionByProperty({ collides: true });
+        this.tileset = this.map.addTilesetImage("Grass", "Grass") //往空地图添加 草地 图片
+        this.groundLayer = this.map.createStaticLayer("Ground", this.tileset, 0, 0); // 地面图层
+        this.wallsLayer = this.map.createStaticLayer("Walls", this.tileset, 0, 0);  // 墙 图层
+        this.wallsLayer.setCollisionByProperty({ collides: true }); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
     
+        // 设置物理引擎检查碰撞范围
         this.physics.world.setBounds(
           0,
           0,
           this.wallsLayer.width,
           this.wallsLayer.height
         );
-        //this.showDebugWalls();
+       }
+      initNetEvent(){
+        var self = this
+        let room = new SocketServer()
+        this.room = room
+
+
+        room.conn((data) => {
+            if (data.event === 'PLAYER_JOINED') {
+                console.log('PLAYER_JOINED'); 
+                if (!onlinePlayers[data.sessionId]) {
+                onlinePlayers[data.sessionId]  = self.player //new Player(self, self.wallsLayer, 100, 100, data.sessionId)
+                //let player = onlinePlayers[data.sessionId]
+                }
+            }
+
+            if (data.event === 'PLAYER_LEFT') {
+                console.log('PLAYER_LEFT'); 
+                if (onlinePlayers[data.sessionId]) {
+                    onlinePlayers[data.sessionId].destroy();
+                    delete onlinePlayers[data.sessionId];
+                }
+            }
+
+            if (data.event === 'PLAYER_MOVED') {
+                if (!onlinePlayers[data.sessionId]) {
+                onlinePlayers[data.sessionId] = new Player(self, self.wallsLayer, data.x, data.y, data.sessionId)
+                }
+                onlinePlayers[data.sessionId].isWalking(data.x, data.y);
+            } 
+ 
+        })
+
+        this.player = new Player(this, this.wallsLayer, 100, 100, this.room.sessionId || "张三" ); // 创建玩家(自己)
+        if (!onlinePlayers[this.room.sessionId]) {
+            onlinePlayers[this.room.sessionId]  = this.player
+        }
+
       }
+
 
       initChests() {
         // 地图里面找所有宝箱的点
@@ -122,7 +165,7 @@ export class GameScene extends Phaser.Scene {
             function(obj1, obj2){
                 obj1.getDamage(1)
                 obj2.getDamage(1) 
-                console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
+                //console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
             },
             undefined,
             this);
@@ -140,6 +183,7 @@ export class GameScene extends Phaser.Scene {
           tileColor: null,
           collidingTileColor: new Phaser.Display.Color(243, 234, 48, 255),
         });
-      }
+    }
+    
 
 }

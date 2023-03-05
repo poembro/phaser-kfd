@@ -14,16 +14,17 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     playerNickname = null 
    
     speed = 100 
-    
+    room = null
 
     constructor(scene, worldLayer, x, y, uuid) {
         super(scene, x, y, "king");
         
         this.scene.add.existing(this);
         scene.physics.add.existing(this); 
+ 
         //玩家不能离开这个世界
         this.body.setCollideWorldBounds(true);
-    
+
         /**
         如果游戏对象已经有一个主体，这个方法将简单地将它添加回模拟中。
         可以指定主体是动态的还是静态的。动态物体可以通过速度和加速度运动。静态主体保持固定位置，因此能够使用优化的搜索树，使其成为静态元素(如关卡对象)的理想选择。你仍然可以与静态物体碰撞和重叠。
@@ -40,6 +41,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setOffset(8, 0);
  
  console.log("----->>>>>>>>>>---",this.x,this.y )
+        this.room = this.scene.room
         this.id = uuid
         this.hpValue = scene.add.text( 
             (this.x) -20 + 60, 
@@ -51,7 +53,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.playerNickname = this.scene.add.text(
             this.x -20,
             (this.y - 40),
-             'Player');
+            uuid+'');
 
         this.scene.anims.create({
             key: "run",
@@ -137,7 +139,15 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
     }
 
-    update() {
+
+    isWalking(x, y) {
+        // Player
+        //this.anims.play(`onlinePlayer-${position}-walk`, true);
+        this.setPosition(x, y);
+        this.showPlayerNickname() 
+    }
+
+    update(room) {
         //停止上一帧之前的任何运动
         this.body.setVelocity(0);
         // Show player nickname above player
@@ -146,6 +156,13 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         if (this.cursors.up.isDown) {
             this.body.setVelocityY(-this.speed) 
             !this.anims.isPlaying && this.anims.play("run", true);
+
+            room.send({
+                event: "PLAYER_MOVED",
+                position: 'up',
+                x: this.x,
+                y: this.y
+            }) 
         }  
       
         if (this.cursors.left.isDown) {
@@ -153,10 +170,24 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.checkFlip();
             this.body.setOffset(48, 15)
             !this.anims.isPlaying && this.anims.play("run", true)
+
+            room.send({
+                event: "PLAYER_MOVED",
+                position: 'left',
+                x: this.x,
+                y: this.y
+            })
         } 
         if (this.cursors.down.isDown) {
             this.body.velocity.y = 110;
             !this.anims.isPlaying && this.anims.play("run", true);
+
+            room.send({
+                event: "PLAYER_MOVED",
+                position: 'down',
+                x: this.x,
+                y: this.y
+            }) 
         }
     
         if (this.cursors.right.isDown) {
@@ -164,6 +195,13 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.checkFlip();
             this.body.setOffset(15, 15);
             !this.anims.isPlaying && this.anims.play("run", true);
+
+            room.send({
+                event: "PLAYER_MOVED",
+                position: 'right',
+                x: this.x,
+                y: this.y
+            } )
         }
     
         if (this.cursors.space.isDown) {

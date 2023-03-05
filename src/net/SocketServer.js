@@ -1,15 +1,16 @@
-import "../../../../../../Library/Caches/typescript/2.9/node_modules/@types/google-protobuf"  
+import "google-protobuf"  
 import pushPb from './push_pb'
 
 /*================================================
 | Array with current online players
 */
 let onlinePlayers = [];
-let room = null
-
+ 
 class SocketServer {
+    fn = null
+    heartbeatInterval  = null
     constructor() {
-        this.fn = null
+        
     }
     then(f){
        f(this)
@@ -27,27 +28,28 @@ class SocketServer {
             let ws = new WebSocket( 'ws://127.0.0.1:14020/v2/ws?token=' +  item.token);
             self.ws = ws
             ws.binaryType = 'arraybuffer';
-            ws.onopen         = self.onopen;
-            ws.onclose        = self.onclose;
-            ws.onmessage     = self.onMessage;
+            ws.onopen         = () => { self.onopen() };
+            ws.onclose        = (e) => { self.onclose(e); }
+            ws.onmessage     =  (e) => { self.onMessage(e);}
         })
+        this.heartbeatInterval = setInterval(this.heartbeat, 30 * 1000);
+
     }
 
-    onopen(ws, evt) {
-        room.heartbeatInterval = setInterval(room.heartbeat, 30 * 1000);
+    onopen( evt) {
         // 上报位置.
        
-        let x = room.getRnd(3200,3268)
-        let y = room.getRnd(3480,34900)
-        room.send({
+        let x = this.getRnd(3200,3268)
+        let y = this.getRnd(3480,34900)
+        this.send({
             event:'PLAYER_FIRST_POS',
             x: x,
             y:y,
         }) 
 
-        room.fn({
+        this.fn({
             event:'PLAYER_JOINED',
-            sessionId:room.sessionId,
+            sessionId:this.sessionId,
             x: x,
             y:y,
             map:"town",
@@ -57,7 +59,6 @@ class SocketServer {
     onMessage(evt) {
         var bodydata = evt.data;
         var p = pushPb.Proto.deserializeBinary(bodydata)
-        console.log("-----op--",p.getOp(),"-------")
 
         switch( p.getOp()) {
             case 3:
@@ -78,7 +79,7 @@ class SocketServer {
                       return
                     }
                     console.log(dst)
-                    room.fn({
+                    this.fn({
                         event:'PLAYER_MOVED',
                         sessionId:dst[0],
                         x: dst[1],
@@ -108,7 +109,7 @@ class SocketServer {
             let tdata2= posReqPb2.serializeBinary()
             pb2.setBody(tdata2)
             let body = pb2.serializeBinary()
-            room.ws.send(body)
+            this.ws.send(body)
             return
         }
         if (data.event == "PLAYER_FIRST_POS")  {
@@ -126,7 +127,7 @@ class SocketServer {
             let tdata= posReqPb.serializeBinary()
             pb.setBody(tdata)
             let body = pb.serializeBinary()
-            room.ws.send(body)
+            this.ws.send(body)
             return
         }
     }
@@ -148,7 +149,7 @@ class SocketServer {
         let hbSerializeData = hbPb.serializeBinary()
         pb.setBody(hbSerializeData)
         let body =pb.serializeBinary()
-        room.ws.send(body)
+        this.ws.send(body)
     }
 
     async getToken(){
@@ -224,8 +225,6 @@ class SocketServer {
 }
 
 
-  
+   
 
-  room =new SocketServer()
-
-export {onlinePlayers,room };
+export {onlinePlayers,SocketServer };

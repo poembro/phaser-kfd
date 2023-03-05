@@ -11,7 +11,7 @@ import level1JSON from "./assets/tilemaps/json/level-1.json";
 import GrassJSON from "./assets/tilemaps/json/Grass.json";
 
 
-import WaterPNG from "./assets/spritesheets/Water.png";
+import backgroundPNG from "./assets/spritesheets/background.png";
 
 import foodPNG from "./assets/spritesheets/food.png";
 
@@ -42,7 +42,7 @@ export class LoadingScene extends Phaser.Scene {
         this.load.tilemapTiledJSON("Level-1", level1JSON);
         this.load.tilemapTiledJSON("Level-2", GrassJSON);
     
-        this.load.spritesheet("water", WaterPNG, {
+        this.load.spritesheet("background", backgroundPNG, {
             frameWidth: 64,
             frameHeight: 16,
         });
