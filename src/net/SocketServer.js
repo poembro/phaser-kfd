@@ -7,33 +7,38 @@ import pushPb from './push_pb'
 let onlinePlayers = [];
  
 class SocketServer {
+    sessionId = ""
+    key = ""
+    ws = null
     fn = null
     heartbeatInterval  = null
     constructor() {
-        
+
     }
-    then(f){
-       f(this)
-    }
-    conn(fn){
-        let self = this
-        this.key = ""
-        this.sessionId = ""
-        this.fn = fn
-        this.ws = null
-        this.getToken().then((item) => {
+    
+    conn(fn){ 
+        if (this.fn) {
+            return 
+        }
+        this.fn = fn  
+
+        let self = this 
+        this.getToken().then((dst) => {
+            let item = dst.data
+            console.log("-------->",item)    
             self.key = item.nickname
             self.sessionId = item.id
         
             let ws = new WebSocket( 'ws://127.0.0.1:14020/v2/ws?token=' +  item.token);
             self.ws = ws
             ws.binaryType = 'arraybuffer';
-            ws.onopen         = () => { self.onopen() };
+            ws.onopen         = () => {
+                self.onopen()
+                self.heartbeatInterval = setInterval(self.heartbeat, 30 * 1000);
+            };
             ws.onclose        = (e) => { self.onclose(e); }
             ws.onmessage     =  (e) => { self.onMessage(e);}
         })
-        this.heartbeatInterval = setInterval(this.heartbeat, 30 * 1000);
-
     }
 
     onopen( evt) {
@@ -46,7 +51,7 @@ class SocketServer {
             x: x,
             y:y,
         }) 
-
+/**
         this.fn({
             event:'PLAYER_JOINED',
             sessionId:this.sessionId,
@@ -54,6 +59,7 @@ class SocketServer {
             y:y,
             map:"town",
         })
+        */
     }
     
     onMessage(evt) {
@@ -153,12 +159,14 @@ class SocketServer {
     }
 
     async getToken(){
-        var items = {}
-         await this.ajax({
+        let item = await this.ajax({
             type:"GET",
             url:"http://127.0.0.1:14020/v2/ws/comet/GetToken",
             data:{id: this.getRnd(1,100000)}
-        }).then((res) => {
+        })
+        
+        /** 
+        .then((res) => {
             if (res.code != 200) {
                 return false
             }
@@ -167,7 +175,8 @@ class SocketServer {
         }, (err) => {
             console.log(err)
         })
-        return items
+        */
+        return item
     }
     getRnd(min, max){
 		return Math.floor(Math.random() * (max - min + 1)) + min

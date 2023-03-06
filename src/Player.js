@@ -14,7 +14,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     playerNickname = null 
    
     speed = 100 
-    room = null
+
+    addHPHandler = null
 
     constructor(scene, worldLayer, x, y, uuid) {
         super(scene, x, y, "king");
@@ -40,8 +41,6 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setSize(30, 30);
         this.body.setOffset(8, 0);
  
- console.log("----->>>>>>>>>>---",this.x,this.y )
-        this.room = this.scene.room
         this.id = uuid
         this.hpValue = scene.add.text( 
             (this.x) -20 + 60, 
@@ -71,22 +70,20 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
               end: 2,
             }),
             frameRate: 8,
-          });
+          }); 
+    }
 
-
-
-        this.addHPHandler = (e) =>{
-            // 加血
+    initEvents() { 
+        this.addHPHandler = (e) =>{  // 加血
             this.hp = this.hp + 10;
             if (this.hpValue) this.hpValue.setText(this.hp + ""); 
         }
         // EVENTS 监听事件
-        this.scene.game.events.on(EVENTS_NAME.addPh, this.addHPHandler, this);
-        // 销毁事件        
-        this.on("destroy", () => {
-            console.log("    这里被调用了this.on(destroy, () => {")
-            this.scene.game.events.removeListener(EVENTS_NAME.addPh, this.addHPHandler)
-        });
+        this.scene.game.events.on(EVENTS_NAME.addPh, this.addHPHandler, this)
+    }
+
+    destroy() {
+        this.scene.game.events.removeListener(EVENTS_NAME.addPh, this.addHPHandler)
     }
 
     addHP(){
@@ -121,9 +118,9 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                 //console.log("自己 getDamage this.setAlpha(1) ")
                this.setAlpha(1);
             },
-        });
+        })
 
-        this.hpValue.setText(this.hp + "");
+        this.hpValue.setText(this.hp + "")
         if (this.hp <= 0) {
            // console.log("英雄 血量小于等于0 游戏结束")
             this.scene.game.events.emit(EVENTS_NAME.gameEnd, GameStatus.LOSE);
@@ -205,11 +202,9 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
     
         if (this.cursors.space.isDown) {
-            console.log(" 按攻击键后 执行")
-
+            console.log(" 按攻击键后 执行") 
             this.scene.game.events.emit(EVENTS_NAME.attack)
-            this.anims.play("attack", true); // 攻击动画
-
+            this.anims.play("attack", true); // 攻击动画 
         }
     }
  

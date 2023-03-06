@@ -14,13 +14,13 @@ const randomDirection = (exclude) => {
 };
 
 var EVENTS_NAME = {
-    addPh :"app-pd",
+    addPh : "app-pd",
     gameEnd : "game-end",
     chestLoot : "chest-loot",
     attack : "attack",
-  }
+}
 export default class Enemy extends Physics.Arcade.Sprite {
-    direction = Direction.RIGHT;
+    direction = Direction.RIGHT; // 方向
     moveEvent = Phaser.Time.TimerEvent
     target = null // 玩家
     AGRESSOR_RADIUS = 80
@@ -45,50 +45,49 @@ export default class Enemy extends Physics.Arcade.Sprite {
 
 
         this.id = uuid 
-        this.hpValue = scene.add.text( 
-            (this.x) -20 + 60, 
-            (this.y - 40),
-            this.hp +""
-          );
-        this.enemyNickname = this.scene.add.text(
-            this.x -20,
-            (this.y - 40),
-             '怪物');
+        this.hpValue = scene.add.text((this.x) -20 + 60, (this.y - 40),this.hp +"")
+        this.enemyNickname = this.scene.add.text(this.x -20,(this.y - 40),'怪物');
 
- 
-        this.moveEvent = scene.time.addEvent({
+  
+        this.initEvents() 
+    }
+
+    initEvents() {
+        this.moveEvent = this.scene.time.addEvent({
             delay: 2000,
             callback: () => {
                 this.direction = randomDirection(this.direction);
             },
             loop: true,
-        });
+        })
 
         this.attackHandler = (e) => {
             let a = { x: parseInt(this.x), y: parseInt(this.y) } 
-            let b = { x: parseInt(target.x), y: parseInt(target.y) }
-            console.log("------->", a, "----b",b," 结果",Phaser.Math.Distance.BetweenPoints(a,b)  )
+            let b = { x: parseInt(this.target.x), y: parseInt(this.target.y) }
+            //console.log("------->", a, "----b",b," 结果",Phaser.Math.Distance.BetweenPoints(a,b)  )
             if ( Phaser.Math.Distance.BetweenPoints(a,b) < this.AGRESSOR_RADIUS) {
                 this.getDamage(1);
             }
         }
-         // EVENTS 监听事件     // 处理被宰之后的动作
-         this.scene.game.events.on(EVENTS_NAME.attack, this.attackHandler, this);
+        
+        // EVENTS 监听事件     // 处理被宰之后的动作
+        this.scene.game.events.on(EVENTS_NAME.attack, this.attackHandler, this);
  
         
-         this.on("destroy", () => {
+        // 为给定事件添加侦听器。
+        this.on("destroy", () => {
             console.log("    这里被调用了this.on(destroy, () => {")
-             this.scene.game.events.removeListener(EVENTS_NAME.attack, this.attackHandler)
-        });
+            this.scene.game.events.removeListener(EVENTS_NAME.attack, this.attackHandler)
+        }, this)
     }
 
  
     destroy() {
-        this.moveEvent.destroy(); 
-        super.destroy();
+        super.destroy(); 
+        this.moveEvent.destroy();  
 
         this.enemyNickname.destroy(); 
-        this.hpValue.destroy(); 
+        this.hpValue.destroy();
     }
 
     setTarget(target) {

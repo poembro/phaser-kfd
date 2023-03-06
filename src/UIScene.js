@@ -1,15 +1,8 @@
 import Phaser from "phaser";
 
-import { ScoreOperations, GameStatus ,LEVELS} from "./consts";
+import { ScoreOperations, GameStatus ,LEVELS, EVENTS_NAME} from "./consts";
 
-
-var EVENTS_NAME = {
-    addPh : "app-pd",
-    gameEnd : "game-end",
-    chestLoot : "chest-loot",
-    attack : "attack",
-  }
-
+ 
 export class UIScene extends Phaser.Scene {
     score = null
     levelName = ""
@@ -21,18 +14,11 @@ export class UIScene extends Phaser.Scene {
     }
 
     preload() {
-     }
+    }
 
     create(props) { 
-        this.levelName = props.name;
-    
-        this.score = this.add.text(
-            20,
-            20,
-            0
-          ).setFontSize(12)
-            .setOrigin(0.8, 0.5);
-
+        this.levelName = props.name; //props.name = Level-1
+        this.score = this.add.text(20,20,0).setFontSize(12).setOrigin(0.8, 0.5);
         this.initListeners();
     }
     initListeners() {
@@ -40,11 +26,12 @@ export class UIScene extends Phaser.Scene {
         this.game.events.once(EVENTS_NAME.gameEnd, this.gameEndHandler, this);
     }
 
-    gameEndHandler (status) {
+    gameEndHandler (status) { // 游戏结束标识
         this.cameras.main.setBackgroundColor("rgba(0,0,0,0.6)");
-        this.game.scene.pause("game-scene");
+        this.game.scene.pause("game-scene") // 暂停游戏场景
    
-        this.gameEndPhrase = this.add.text( 
+        // 成功失败文字
+        this.gameEndPhrase = this.add.text(
           this.game.scale.width / 2,
           this.game.scale.height * 0.4,
           status === GameStatus.LOSE
@@ -59,38 +46,40 @@ export class UIScene extends Phaser.Scene {
           this.game.scale.height * 0.4
         );
   
-        this.input.on("pointerdown", () => {
+        // 监听键盘 按下点击
+        this.input.on("pointerdown", () => { 
           this.game.events.off(EVENTS_NAME.chestLoot, this.chestLootHandler);
           this.game.events.off(EVENTS_NAME.gameEnd, this.gameEndHandler);
           this.scene.get("game-scene").scene.restart({ name: "Level-1" });
           this.scene.restart({ name: "Level-1" });
         });
-      };
+    };
 
     chestLootHandler() { // 捡到宝贝作为通关依据
+        let self = this
         this.changeValue(this.score, ScoreOperations.INCREASE, 10);
 
-        const currentIndex = LEVELS.findIndex(
-        (item) => item.name === this.levelName
-        );
+        const currentIndex = LEVELS.findIndex((item) => item.name === self.levelName);
 
         if (LEVELS[currentIndex].score === this.scoreValue) {
-            const nextLevel = LEVELS[currentIndex + 1];
+            const nextLevel = LEVELS[currentIndex + 1]
             if (nextLevel) {
-                this.game.events.off(EVENTS_NAME.chestLoot, this.chestLootHandler);
-                this.game.events.off(EVENTS_NAME.gameEnd, this.gameEndHandler);
-                this.scene.get("game-scene").scene.restart({ name: nextLevel.name });
-                this.scene.restart({ name: nextLevel.name });
+                this.game.events.off(EVENTS_NAME.chestLoot, this.chestLootHandler)
+                this.game.events.off(EVENTS_NAME.gameEnd, this.gameEndHandler)
+
+                this.scene.get("game-scene").scene.restart({ name: nextLevel.name })
+                this.scene.restart({ name: nextLevel.name })
+                this.levelName = nextLevel.name
             } else {
                 if (this.scoreValue === 100) {
-                this.game.events.emit(EVENTS_NAME.gameEnd, "win");
+                    this.game.events.emit(EVENTS_NAME.gameEnd, GameStatus.WIN);
                 }
             }
         }
-    } 
+    }
 
-    changeValue(score, operation , value  )  {
-        switch (operation) {
+    changeValue(score, op , value) {
+        switch (op) {
         case ScoreOperations.INCREASE:
             this.scoreValue += value;
             break;
@@ -104,7 +93,6 @@ export class UIScene extends Phaser.Scene {
             break;
         } 
         score.setText(`得分: ${this.scoreValue}`);
-         
     }
  
 }
