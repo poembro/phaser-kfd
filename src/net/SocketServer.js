@@ -21,10 +21,7 @@ class SocketServer {
         if(r!=null)return  unescape(r[2]); return null;
     }
 
-    conn(fn){
-        if (this.fn) {
-            //return 
-        }
+    conn(fn){ 
         this.fn = fn  
 
         let self = this 
@@ -70,23 +67,26 @@ class SocketServer {
     }
     
     onMessage(evt) {
+        var self = this
         var bodydata = evt.data;
         var p = pushPb.Proto.deserializeBinary(bodydata)
-
-        switch( p.getOp()) {
+        switch(p.getOp()) {
             case 3:
                 break;
             case 9:
                 break;
             case 29:
-            let  offlineTmps  = pushPb.Offline.deserializeBinary(p.getBody())
-            offlineTmps.getOpsList().forEach((v) => {
-                let memberId = parseInt(v) 
-                if (onlinePlayers[memberId]) delete onlinePlayers[memberId]
-            })
-            break
+                let  offlineTmps  = pushPb.Offline.deserializeBinary(p.getBody())
+                offlineTmps.getOpsList().forEach((v) => {
+                    let memberId = parseInt(v) 
+                    self.fn({
+                        event:'PLAYER_CLOSE',
+                        memberId:memberId
+                    })
+                })
+                break
             case 41: // 处理发消息
-            break  
+                break  
             case 39: // 处理 位置  
                 let  tmps  = pushPb.PosResp.deserializeBinary(p.getBody())
                 tmps.getDataList().forEach((v) => {
@@ -96,38 +96,24 @@ class SocketServer {
                       return
                     }
                     console.log(dst)
-                    this.fn({
+                    self.fn({
                         event:'PLAYER_MOVED',
                         memberId:dst[0],
                         x: dst[1],
                         y:dst[2],
-                        map:"town",
+                        action:dst[3],
                     })
                 })
                 break
             default: 
-             break
-        } 
+                break
+        }
     }
 
 
     send(data) {
-        if (data.event == "PLAYER_MOVED")  {
-            let pb2 = new pushPb.Proto()
-            pb2.setVer(1) 
-            pb2.setOp(32)
-            let posReqPb2 = new pushPb.PosReq()
-            posReqPb2.addOps(parseInt(data.x),1)
-            posReqPb2.addOps(parseInt(data.y),2)
-            posReqPb2.addOps(1,3)  //朝向
-            posReqPb2.addOps(0,4)   
-            posReqPb2.addOps(0,5) 
-            let tdata2= posReqPb2.serializeBinary()
-            pb2.setBody(tdata2)
-            let body = pb2.serializeBinary()
-            this.ws.send(body)
-            return
-        }
+        var self = this
+        // 获取周边
         if (data.event == "PLAYER_FIRST_POS")  {
             let pb = new pushPb.Proto()
             pb.setVer(1) 
@@ -142,7 +128,35 @@ class SocketServer {
             let tdata= posReqPb.serializeBinary()
             pb.setBody(tdata)
             let body = pb.serializeBinary()
-            this.ws.send(body)
+            self.ws.send(body)
+            return
+        }
+
+        // 同步位置
+        if (data.event == "PLAYER_MOVED")  {
+            let pb2 = new pushPb.Proto()
+            pb2.setVer(1) 
+            pb2.setOp(32)
+            let posReqPb2 = new pushPb.PosReq()
+            posReqPb2.addOps(parseInt(data.x),1)
+            posReqPb2.addOps(parseInt(data.y),2)
+            posReqPb2.addOps(data.action,3)  //动作: 如 方位/攻击/朝向
+            posReqPb2.addOps(0,4)  // 舞动
+            posReqPb2.addOps(0,5) 
+            let tdata2= posReqPb2.serializeBinary()
+            pb2.setBody(tdata2)
+            let body = pb2.serializeBinary()
+            self.ws.send(body)
+            return
+        }
+
+        // 离开
+        if (data.event == "PLAYER_CLOSE")  {
+            let pb = new pushPb.Proto()
+            pb.setVer(1) 
+            pb.setOp(29) 
+            let body = pb.serializeBinary()
+            self.ws.send(body)
             return
         }
         
@@ -151,9 +165,13 @@ class SocketServer {
 
         
     onclose(v) {
+        var self = this
         //if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
         let memberId = parseInt(this.memberId) 
-        if (onlinePlayers[memberId]) delete onlinePlayers[memberId]
+        self.fn({
+            event:'PLAYER_CLOSE',
+            memberId:memberId
+        })
     }
 
     heartbeat(){

@@ -1,6 +1,9 @@
 import kingPNG from "./assets/sprites/king.png";
+
+
 import kingAtlasPNG from "./assets/spritesheets/a-king_withmask.png";
 import kingAtlasJSON from "./assets/spritesheets/a-king_atlas.json";
+
 
 import lizardAtlasPNG from "./assets/spritesheets/lizard.png";
 import lizardAtlasJSON from "./assets/spritesheets/lizard.json";

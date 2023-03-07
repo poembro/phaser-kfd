@@ -1,6 +1,6 @@
 import  Player  from "./Player"; 
 import Enemy  from "./Enemy"; 
-//import { EVENTS_NAME } from "./consts";
+import { EVENTS_NAME } from "./consts";
 import {onlinePlayers, SocketServer} from './net/SocketServer';
 
  
@@ -38,9 +38,10 @@ export class GameScene extends Phaser.Scene {
 
         // 先创建地图 props.name = Level-1 / Level-2
         this.initMap(props.name)
+        this.initChests()
         this.initPlayer(props.name)
-        this.initChests() 
-        this.initEnemies()
+        
+        //this.initEnemies()
         this.initCamera() 
     }
   
@@ -75,7 +76,12 @@ export class GameScene extends Phaser.Scene {
             if (data.event === 'PLAYER_JOINED') {
                 console.log('PLAYER_JOINED'); 
                 if (!onlinePlayers[data.memberId]) {
-                    onlinePlayers[data.memberId] = new Player(self, self.wallsLayer, 100, 100, data.memberId)
+                    let otherPlayer = new Player(self, self.wallsLayer, 100, 100, data.memberId)
+                    onlinePlayers[data.memberId] = otherPlayer
+                    // 检查下新玩家与自己重叠
+                    self.physics.add.overlap(self.player, otherPlayer, (obj1, obj2) => { 
+                        console.log("玩家  ",obj1.id, " 检查下新玩家与自己重叠 ", obj2.id)
+                    })
                 }
             }
 
@@ -88,10 +94,22 @@ export class GameScene extends Phaser.Scene {
             }
 
             if (data.event === 'PLAYER_MOVED') {
+                let otherPlayer = null
                 if (!onlinePlayers[data.memberId]) {
-                onlinePlayers[data.memberId] = new Player(self, self.wallsLayer, data.x, data.y, data.memberId)
+                    otherPlayer = new Player(self, self.wallsLayer, data.x, data.y, data.memberId)
+                    onlinePlayers[data.memberId] = otherPlayer
+
+                    // 检查下新玩家与自己重叠
+                    self.physics.add.overlap(self.player, otherPlayer, (obj1, obj2) => { 
+                        console.log("玩家  ",obj1.id, " 检查下新玩家与自己重叠 ", obj2.id)
+                    }) 
+
+                    self.bindPlayerByChests(otherPlayer) 
+                } else {
+                    otherPlayer = onlinePlayers[data.memberId]
                 }
-                onlinePlayers[data.memberId].isWalking(data.x, data.y);
+                
+                otherPlayer.netEventHandle(data) // 去处理网络数据
             }
         })
 
@@ -99,6 +117,8 @@ export class GameScene extends Phaser.Scene {
         if (!onlinePlayers[this.SocketServer.memberId]) {
             onlinePlayers[this.SocketServer.memberId]  = this.player
         } 
+
+        this.bindPlayerByChests(this.player) 
     }
 
 
@@ -106,23 +126,25 @@ export class GameScene extends Phaser.Scene {
         let self = this 
         // 地图里面找所有宝箱的点
         const chestPoints = this.map.filterObjects("Chests", (obj) => obj.name === "ChestPoint")
-        this.chests = chestPoints.map((chestPoint) => this.physics.add.sprite(chestPoint.x ,chestPoint.y ,"food",Math.floor(Math.random() * 8)).setScale(0.5))
-    
+        this.chests = chestPoints.map((chestPoint) => self.physics.add.sprite(chestPoint.x ,chestPoint.y ,"food",Math.floor(Math.random() * 8)).setScale(0.5))
+    }
+
+    bindPlayerByChests(player) { // 绑定玩家与宝箱的物理碰撞关系
         this.chests.forEach((item) => {
-          // 检查玩家是否与任何宝箱重叠
-          this.physics.add.overlap(this.player, item, (obj1, obj2) => {
-            // this.game.events.emit(EVENTS_NAME.chestLoot, {memberId: obj1.id}) // 加 通关条件 
-            obj1.addHP() // 加血
-            obj2.destroy()
-            //console.log("玩家  ",obj1.id, " 捡 到宝贝 ", obj2)
-          })
+            // 检查玩家是否与任何宝箱重叠
+            this.physics.add.overlap(player, item, (obj1, obj2) => {
+                // this.game.events.emit(EVENTS_NAME.chestLoot, {memberId: obj1.id}) // 加 通关条件 
+                obj1.addHP() // 加血
+                obj2.destroy()
+                //console.log("玩家  ",obj1.id, " 捡 到宝贝 ", obj2)
+            })
         })
     }
 
     initEnemies() {
         let self = this 
         const enemiesPoints = this.map.filterObjects("Enemies", (obj) => obj.name === "EnemyPoint");
-        this.enemies = enemiesPoints.map((enemyPoint, id) => new Enemy(this, enemyPoint.x, enemyPoint.y, self.player, id))
+        this.enemies = enemiesPoints.map((enemyPoint, id) => new Enemy(self, enemyPoint.x, enemyPoint.y, self.player, id))
       
         this.physics.add.collider(this.enemies, this.wallsLayer)
         this.physics.add.collider(this.enemies, this.enemies)

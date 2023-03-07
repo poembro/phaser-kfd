@@ -42,35 +42,11 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setOffset(8, 0);
  
         this.id = uuid
-        this.hpValue = scene.add.text( 
-            (this.x) -20 + 60, 
-            (this.y - 40),
-            this.hp +""
-          );
- 
+        this.hpValue = scene.add.text((this.x) -20 + 60,  (this.y - 40), this.hp +"");
+        this.playerNickname = this.scene.add.text(this.x -20, (this.y - 40), uuid+'');
 
-        this.playerNickname = this.scene.add.text(
-            this.x -20,
-            (this.y - 40),
-            uuid+'');
-
-        this.scene.anims.create({
-            key: "run",
-            frames: this.scene.anims.generateFrameNames("a-king", {
-              prefix: "run-",
-              end: 7,
-            }),
-            frameRate: 8,
-          });
-      
-          this.scene.anims.create({
-            key: "attack",
-            frames: this.scene.anims.generateFrameNames("a-king", {
-              prefix: "attack-",
-              end: 2,
-            }),
-            frameRate: 8,
-          }); 
+        this.scene.anims.create({key: "run",  frames: this.scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }),  frameRate: 8, })
+        this.scene.anims.create({key: "attack",frames: this.scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}),frameRate: 8,})
     }
 
     initEvents() { 
@@ -96,7 +72,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
     checkFlip() {
         if (this.body.velocity.x < 0) {
-          this.scaleX = -1;
+          this.scaleX = -1; // 规模 
         } else {
           this.scaleX = 1;
         }
@@ -137,12 +113,6 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     }
 
 
-    isWalking(x, y) {
-        // Player
-        //this.anims.play(`onlinePlayer-${position}-walk`, true);
-        this.setPosition(x, y);
-        this.showPlayerNickname() 
-    }
 
     update(room) {
         this.autoIncrId++
@@ -162,23 +132,23 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             if (this.autoIncrId % 4 == 0) {
                 room.send({
                     event: "PLAYER_MOVED",
-                    position: 'up',
+                    action: 8,
                     x: this.x,
                     y: this.y
                 }) 
             }
-        }  
+        }
       
         if (this.cursors.left.isDown) {
             this.body.setVelocityX(-this.speed)
             this.checkFlip();
             this.body.setOffset(48, 15)
-            !this.anims.isPlaying && this.anims.play("run", true)
+            !this.anims.isPlaying && this.anims.play("run", true) 
 
             if (this.autoIncrId % 4 == 0) {
                 room.send({
                     event: "PLAYER_MOVED",
-                    position: 'left',
+                    action: 4,
                     x: this.x,
                     y: this.y
                 })
@@ -191,7 +161,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             if (this.autoIncrId % 4 == 0) {
                 room.send({
                     event: "PLAYER_MOVED",
-                    position: 'down',
+                    action: 2,
                     x: this.x,
                     y: this.y
                 }) 
@@ -207,7 +177,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             if (this.autoIncrId % 4 == 0) {
                 room.send({
                     event: "PLAYER_MOVED",
-                    position: 'right',
+                    action: 6,
                     x: this.x,
                     y: this.y
                 })
@@ -215,10 +185,58 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
     
         if (this.cursors.space.isDown) {
-            console.log(" 按攻击键后 执行") 
-            this.scene.game.events.emit(EVENTS_NAME.attack)
-            this.anims.play("attack", true); // 攻击动画 
+            if (this.autoIncrId % 4 == 0) {
+                room.send({
+                    event: "PLAYER_MOVED",
+                    action: 100,
+                    x: this.x,
+                    y: this.y
+                })
+            }
+            this.attackHandle()
         }
+    }
+
+    netEventHandle(data) {
+        this.walkingHandle(data.x, data.y, data.action) 
+ 
+        if (data.action == 100) {
+            this.attackHandle()  // 攻击动画 
+        }
+    }
+
+    walkingHandle(x, y, action) {
+        //停止上一帧之前的任何运动
+        this.body.setVelocity(0);  
+        this.showPlayerNickname();
+
+        // Player
+        switch (action) {
+            case 2 :
+                //this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
+            case 4:
+                //this.body.setVelocityX(-this.speed)
+                 this.body.setOffset(48, 15)
+                 break;
+            case 6:
+                //this.body.setVelocityX(this.speed)
+                 this.body.setOffset(15, 15);
+                break
+            case 8:
+                //this.body.setVelocityY(-this.speed) 
+            default:
+               this.body.setOffset(8, 0) 
+        }
+        this.checkFlip();
+        //!this.anims.isPlaying && this.anims.play("run", true);
+        this.setPosition(x, y)  //通用设置位置
+
+  
+    }
+
+    attackHandle() {
+        this.scene.game.events.emit(EVENTS_NAME.attack)
+        this.anims.play("attack", true); // 攻击动画 
     }
  
 }
