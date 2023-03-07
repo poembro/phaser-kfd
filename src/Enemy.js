@@ -1,24 +1,16 @@
-import Phaser from "phaser";
-import { Physics } from "phaser";
-
-import { Direction } from "./consts";
-
+import Phaser from "phaser"
+import { Physics } from "phaser"
+import { Direction, EVENTS_NAME} from "./consts"
 
 const randomDirection = (exclude) => {
-    let newDirection = Phaser.Math.Between(0, 3);
+    let newDirection = Phaser.Math.Between(0, 3)
     while (newDirection === exclude) {
-    newDirection = Phaser.Math.Between(0, 3);
+       newDirection = Phaser.Math.Between(0, 3)
     }
 
-    return newDirection;
-};
-
-var EVENTS_NAME = {
-    addPh : "app-pd",
-    gameEnd : "game-end",
-    chestLoot : "chest-loot",
-    attack : "attack",
+    return newDirection
 }
+
 export default class Enemy extends Physics.Arcade.Sprite {
     direction = Direction.RIGHT; // 方向
     moveEvent = Phaser.Time.TimerEvent

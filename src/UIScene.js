@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { ScoreOperations, GameStatus ,LEVELS, EVENTS_NAME} from "./consts";
+import {onlinePlayers} from './net/SocketServer';
 
  
 export class UIScene extends Phaser.Scene {
@@ -14,7 +15,7 @@ export class UIScene extends Phaser.Scene {
     }
 
     preload() {
-    }
+    } 
 
     create(props) { 
         this.levelName = props.name; //props.name = Level-1
@@ -44,7 +45,7 @@ export class UIScene extends Phaser.Scene {
         this.gameEndPhrase.setPosition(
           this.game.scale.width / 2 - this.gameEndPhrase.width / 2,
           this.game.scale.height * 0.4
-        );
+        )
   
         // 监听键盘 按下点击
         this.input.on("pointerdown", () => { 
@@ -52,16 +53,20 @@ export class UIScene extends Phaser.Scene {
           this.game.events.off(EVENTS_NAME.gameEnd, this.gameEndHandler);
           this.scene.get("game-scene").scene.restart({ name: "Level-1" });
           this.scene.restart({ name: "Level-1" });
-        });
-    };
+        })
+    }
 
-    chestLootHandler() { // 捡到宝贝作为通关依据
+    chestLootHandler(opt) { // 捡到宝贝作为通关依据
         let self = this
         this.changeValue(this.score, ScoreOperations.INCREASE, 10);
 
         const currentIndex = LEVELS.findIndex((item) => item.name === self.levelName);
 
         if (LEVELS[currentIndex].score === this.scoreValue) {
+            console.log("-----opt.sessionId--被销毁--", opt,"------", onlinePlayers)
+            let memberId = parseInt(opt.memberId)
+            if (onlinePlayers[memberId]) delete onlinePlayers[memberId]
+
             const nextLevel = LEVELS[currentIndex + 1]
             if (nextLevel) {
                 this.game.events.off(EVENTS_NAME.chestLoot, this.chestLootHandler)

@@ -16,7 +16,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     speed = 100 
 
     addHPHandler = null
-
+    autoIncrId = 0
     constructor(scene, worldLayer, x, y, uuid) {
         super(scene, x, y, "king");
         
@@ -145,6 +145,11 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     }
 
     update(room) {
+        this.autoIncrId++
+        if (this.autoIncrId > 1000000000) {
+            this.autoIncrId = 0
+        }
+
         //停止上一帧之前的任何运动
         this.body.setVelocity(0);
         // Show player nickname above player
@@ -154,12 +159,14 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.body.setVelocityY(-this.speed) 
             !this.anims.isPlaying && this.anims.play("run", true);
 
-            room.send({
-                event: "PLAYER_MOVED",
-                position: 'up',
-                x: this.x,
-                y: this.y
-            }) 
+            if (this.autoIncrId % 4 == 0) {
+                room.send({
+                    event: "PLAYER_MOVED",
+                    position: 'up',
+                    x: this.x,
+                    y: this.y
+                }) 
+            }
         }  
       
         if (this.cursors.left.isDown) {
@@ -168,23 +175,27 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.body.setOffset(48, 15)
             !this.anims.isPlaying && this.anims.play("run", true)
 
-            room.send({
-                event: "PLAYER_MOVED",
-                position: 'left',
-                x: this.x,
-                y: this.y
-            })
+            if (this.autoIncrId % 4 == 0) {
+                room.send({
+                    event: "PLAYER_MOVED",
+                    position: 'left',
+                    x: this.x,
+                    y: this.y
+                })
+            }
         } 
         if (this.cursors.down.isDown) {
             this.body.velocity.y = 110;
             !this.anims.isPlaying && this.anims.play("run", true);
 
-            room.send({
-                event: "PLAYER_MOVED",
-                position: 'down',
-                x: this.x,
-                y: this.y
-            }) 
+            if (this.autoIncrId % 4 == 0) {
+                room.send({
+                    event: "PLAYER_MOVED",
+                    position: 'down',
+                    x: this.x,
+                    y: this.y
+                }) 
+            }
         }
     
         if (this.cursors.right.isDown) {
@@ -193,12 +204,14 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.body.setOffset(15, 15);
             !this.anims.isPlaying && this.anims.play("run", true);
 
-            room.send({
-                event: "PLAYER_MOVED",
-                position: 'right',
-                x: this.x,
-                y: this.y
-            } )
+            if (this.autoIncrId % 4 == 0) {
+                room.send({
+                    event: "PLAYER_MOVED",
+                    position: 'right',
+                    x: this.x,
+                    y: this.y
+                })
+            }
         }
     
         if (this.cursors.space.isDown) {
