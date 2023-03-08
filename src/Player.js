@@ -20,33 +20,31 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     constructor(scene, worldLayer, x, y, uuid) {
         super(scene, x, y, "king");
         
-        this.scene.add.existing(this);
+        scene.add.existing(this);
         scene.physics.add.existing(this); 
  
         //玩家不能离开这个世界
         this.body.setCollideWorldBounds(true);
-
+ 
+        
         /**
         如果游戏对象已经有一个主体，这个方法将简单地将它添加回模拟中。
         可以指定主体是动态的还是静态的。动态物体可以通过速度和加速度运动。静态主体保持固定位置，因此能够使用优化的搜索树，使其成为静态元素(如关卡对象)的理想选择。你仍然可以与静态物体碰撞和重叠。
         通常，你不会直接调用这个方法，而是使用街机物理工厂中可用的辅助方法，例如:  */
-        this.scene.physics.world.enableBody(this);
-        this.scene.physics.add.collider(this, worldLayer);
- 
-        // Register cursors for player movement
-        this.cursors = this.scene.input.keyboard.createCursorKeys();
-        //this.spacebar = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        scene.physics.world.enableBody(this);
+        scene.physics.add.collider(this, worldLayer);
 
-        // PHYSICS  Player Offset 
         this.body.setSize(30, 30);
         this.body.setOffset(8, 0);
- 
-        this.id = uuid
-        this.hpValue = scene.add.text((this.x) -20 + 60,  (this.y - 40), this.hp +"");
-        this.playerNickname = this.scene.add.text(this.x -20, (this.y - 40), uuid+'');
 
-        this.scene.anims.create({key: "run",  frames: this.scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }),  frameRate: 8, })
-        this.scene.anims.create({key: "attack",frames: this.scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}),frameRate: 8,})
+        this.cursors = scene.input.keyboard.createCursorKeys();
+        
+        this.id = uuid
+        this.hpValue = scene.add.text((this.x) -20 + 40,  (this.y - 40), this.hp +"");
+        this.playerNickname = scene.add.text(this.x -20, (this.y - 40), uuid+'');
+
+        scene.anims.create({key: "run",  frames: scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }), frameRate: 8,}) // frameRate 帧率 8
+        scene.anims.create({key: "attack",frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
     }
 
     initEvents() { 
@@ -72,7 +70,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
     checkFlip() {
         if (this.body.velocity.x < 0) {
-          this.scaleX = -1; // 规模 
+          this.scaleX = -1; //  缩放 水平翻转  sprite.scale.y = -1，就是垂直翻转
         } else {
           this.scaleX = 1;
         }
@@ -103,11 +101,11 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
     }
 
-    showPlayerNickname() {
-        this.playerNickname.x = this.x -20;
-        this.playerNickname.y = (this.y - 40);
+    showPlayerNickname(x,y) {
+        this.playerNickname.x = x -20;
+        this.playerNickname.y = (y - 40);
  
-        this.hpValue.setPosition((this.x) -20 + 60, (this.y - 40));
+        this.hpValue.setPosition((x) -20 + 40, (y - 40));
         //this.hpValue.setOrigin(0.8, 0.5);
 
     }
@@ -123,7 +121,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         //停止上一帧之前的任何运动
         this.body.setVelocity(0);
         // Show player nickname above player
-        this.showPlayerNickname();
+        this.showPlayerNickname(this.x, this.y);
 
         if (this.cursors.up.isDown) {
             this.body.setVelocityY(-this.speed) 
@@ -138,7 +136,21 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                 }) 
             }
         }
-      
+
+        if (this.cursors.down.isDown) {
+            this.body.velocity.y = 110;
+            !this.anims.isPlaying && this.anims.play("run", true);
+
+            if (this.autoIncrId % 4 == 0) {
+                room.send({
+                    event: "PLAYER_MOVED",
+                    action: 2,
+                    x: this.x,
+                    y: this.y
+                }) 
+            }
+        }
+
         if (this.cursors.left.isDown) {
             this.body.setVelocityX(-this.speed)
             this.checkFlip();
@@ -154,20 +166,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                 })
             }
         } 
-        if (this.cursors.down.isDown) {
-            this.body.velocity.y = 110;
-            !this.anims.isPlaying && this.anims.play("run", true);
-
-            if (this.autoIncrId % 4 == 0) {
-                room.send({
-                    event: "PLAYER_MOVED",
-                    action: 2,
-                    x: this.x,
-                    y: this.y
-                }) 
-            }
-        }
-    
+        
         if (this.cursors.right.isDown) {
             this.body.setVelocityX(this.speed)
             this.checkFlip();
@@ -208,30 +207,33 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     walkingHandle(x, y, action) {
         //停止上一帧之前的任何运动
         this.body.setVelocity(0);  
-        this.showPlayerNickname();
+        this.showPlayerNickname(x, y);
 
+       
         // Player
         switch (action) {
             case 2 :
-                //this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
+                this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
             case 4:
-                //this.body.setVelocityX(-this.speed)
-                 this.body.setOffset(48, 15)
-                 break;
+                this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
+                this.checkFlip();
+                this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
+                break;
             case 6:
-                //this.body.setVelocityX(this.speed)
-                 this.body.setOffset(15, 15);
+                this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
+                this.checkFlip();
+                this.body.setOffset(15, 15);
                 break
             case 8:
-                //this.body.setVelocityY(-this.speed) 
+                this.body.setVelocityY(-this.speed) 
             default:
                this.body.setOffset(8, 0) 
         }
-        this.checkFlip();
-        //!this.anims.isPlaying && this.anims.play("run", true);
-        this.setPosition(x, y)  //通用设置位置
-
-  
+       
+       !this.anims.isPlaying && this.anims.play("run", true);
+       this.setPosition(x, y)  //通用设置位置
+       this.anims.stop()
+       this.body.setVelocity(0) // 速度设置为0
     }
 
     attackHandle() {

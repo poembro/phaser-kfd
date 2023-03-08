@@ -15,16 +15,15 @@ import level1JSON from "./assets/tilemaps/json/level-1.json";
 import Level2JSON from "./assets/tilemaps/json/Grass.json";
 
 
-import backgroundPNG from "./assets/spritesheets/background.png";
-
-import foodPNG from "./assets/spritesheets/food.png";
+import backgroundPNG from "./assets/spritesheets/background.png"
+import foodPNG from "./assets/spritesheets/food.png"
 
 export class LoadingScene extends Phaser.Scene {
     constructor() {
         super("bootGame");
     }
 
-    preload() {
+    preload() { 
         //this.load.baseURL = "http://localhost:8080/assets/";
         this.load.image("king", kingPNG);
 
@@ -35,6 +34,10 @@ export class LoadingScene extends Phaser.Scene {
         // MAP LOADING
         this.load.image("Grass", GrassPNG)// 图块图片。 
      
+        // 读取assets/sprites/fire.json文件，并命名为fire，第三个参数则是图片的路径
+        // this.load.multiatlas('fire', 'assets/sprites/fire.json', 'assets/sprites')
+
+
         this.load.tilemapTiledJSON("Level-1", level1JSON);
         this.load.tilemapTiledJSON("Level-2", Level2JSON);
     
