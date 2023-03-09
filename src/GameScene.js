@@ -41,15 +41,14 @@ export class GameScene extends Phaser.Scene {
         this.initChests()
         this.initPlayer(props.name)
         
-        //this.initEnemies()
         this.initCamera() 
     }
   
     // ltime 当前时间。一个高分辨率定时器值，如果它来自请求动画帧，或日期。现在如果使用SetTimeout。
     // delta 从上一帧开始的时间单位是毫秒。这是一个基于FPS速率的平滑和上限值
     update(ltime,delta) {
-      this.bg.setPosition();
-      this.player.update(this.SocketServer);
+      this.bg.setPosition()
+      this.player.update(this.SocketServer)
     }
  
 
@@ -96,20 +95,29 @@ export class GameScene extends Phaser.Scene {
             if (data.event === 'PLAYER_MOVED') {
                 let otherPlayer = null
                 if (!onlinePlayers[data.memberId]) {
-                    otherPlayer = new Player(self, self.wallsLayer, data.x, data.y, data.memberId)
+                    otherPlayer =  new Enemy(self, self.wallsLayer, 150, 150, self.player, data.memberId)
                     onlinePlayers[data.memberId] = otherPlayer
-
-                    // 检查下新玩家与自己重叠
-                    self.physics.add.overlap(self.player, otherPlayer, (obj1, obj2) => { 
-                        console.log("玩家  ",obj1.id, " 检查下新玩家与自己重叠 ", obj2.id)
-                    }) 
-
-                    self.bindPlayerByChests(otherPlayer) 
+                    
+                    self.bindPlayerByChests(otherPlayer)  
                 } else {
                     otherPlayer = onlinePlayers[data.memberId]
                 }
                 
                 otherPlayer.netEventHandle(data) // 去处理网络数据
+            }
+
+            if (data.event === 'PLAYER_BROADCAST') {
+                console.log('PLAYER_BROADCAST'); 
+                if (onlinePlayers[data.memberId] && data.typ === "attack_hp") {
+                    onlinePlayers[data.memberId].getDamage(data.hp)
+                }
+                if (onlinePlayers[data.memberId] && data.typ === "attack_action") {
+                    onlinePlayers[data.memberId].attackHandle(data.hp)
+                }
+
+                if (onlinePlayers[data.memberId] && data.typ === "chests_hp") {
+                    onlinePlayers[data.memberId].addHP(null)
+                }
             }
         })
 
@@ -118,7 +126,7 @@ export class GameScene extends Phaser.Scene {
             onlinePlayers[this.SocketServer.memberId]  = this.player
         } 
 
-        this.bindPlayerByChests(this.player) 
+        this.bindPlayerByChests(this.player, net) 
     }
 
 
@@ -129,33 +137,19 @@ export class GameScene extends Phaser.Scene {
         this.chests = chestPoints.map((chestPoint) => self.physics.add.sprite(chestPoint.x ,chestPoint.y ,"food",Math.floor(Math.random() * 8)).setScale(0.5))
     }
 
-    bindPlayerByChests(player) { // 绑定玩家与宝箱的物理碰撞关系
+    bindPlayerByChests(player, net) { // 绑定玩家与宝箱的物理碰撞关系
         this.chests.forEach((item) => {
             // 检查玩家是否与任何宝箱重叠
             this.physics.add.overlap(player, item, (obj1, obj2) => {
                 // this.game.events.emit(EVENTS_NAME.chestLoot, {memberId: obj1.id}) // 加 通关条件 
-                obj1.addHP() // 加血
+                obj1.addHP(net) // 加血
                 obj2.destroy()
                 //console.log("玩家  ",obj1.id, " 捡 到宝贝 ", obj2)
             })
         })
     }
 
-    initEnemies() {
-        let self = this 
-        const enemiesPoints = this.map.filterObjects("Enemies", (obj) => obj.name === "EnemyPoint");
-        this.enemies = enemiesPoints.map((enemyPoint, id) => new Enemy(self, enemyPoint.x, enemyPoint.y, self.player, id))
-      
-        this.physics.add.collider(this.enemies, this.wallsLayer)
-        this.physics.add.collider(this.enemies, this.enemies)
-        this.physics.add.collider(self.player, this.enemies, (obj1, obj2) => {
-            obj1.getDamage(1)
-            obj2.getDamage(1) 
-            //console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
-        },
-        undefined,
-        this)
-    }
+  
 
     initCamera(){
         let self = this

@@ -13,9 +13,9 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
    
     speed = 100 
 
-    addHPHandler = null
     pointerupHandler= null // 点击事件处理函数
     autoIncrId = 0
+    cursors= null
     constructor(scene, worldLayer, x, y, uuid) {
         super(scene, x, y, "king");
         
@@ -33,8 +33,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         scene.physics.world.enableBody(this);
         scene.physics.add.collider(this, worldLayer);
 
-        this.body.setSize(30, 30);
-        this.body.setOffset(8, 0);
+        this.body.setSize(30, 30)
+        this.body.setOffset(8, 0)
 
         
         this.id = uuid
@@ -47,14 +47,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.initEvents()
     }
 
-    initEvents() { 
-        this.addHPHandler = (e) =>{  // 加血
-            this.hp = this.hp + 10;
-            if (this.hpValue) this.hpValue.setText(this.hp + ""); 
-        }
-        // EVENTS 监听事件
-        this.scene.game.events.on(EVENTS_NAME.addPh, this.addHPHandler, this)
-
+    initEvents() {
         // 点击事件
         this.pointerupHandler = (e) =>{
             let action = 0
@@ -65,21 +58,17 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             if (! e.y > this.y )  action = 8
             this.walkingHandle(e.x, e.y, action) 
         }
-        this.scene.input.on("pointerup", this.pointerupHandler, this); 
+        //this.scene.input.on("pointerup", this.pointerupHandler, this); 
       
         // 键盘事件
         this.cursors = this.scene.input.keyboard.createCursorKeys(); 
     }
 
     destroy() {
-        this.scene.game.events.removeListener(EVENTS_NAME.addPh, this.addHPHandler)
-        this.scene.input.off("pointerup", this.pointerupHandler, this)
+        //this.scene.input.off("pointerup", this.pointerupHandler, this)
     }
 
-    addHP(){
-        this.hp = this.hp + 10;
-        this.hpValue.setText(this.hp + ""); 
-    }
+
     getHPValue() {
         return this.hp;
     }
@@ -117,7 +106,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
     }
 
-    showPlayerNickname(x,y) {
+    showNickname(x,y) {
         this.playerNickname.x = x -20;
         this.playerNickname.y = (y - 40);
  
@@ -136,7 +125,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         //停止上一帧之前的任何运动
         this.body.setVelocity(0);
         // Show player nickname above player
-        this.showPlayerNickname(this.x, this.y);
+        this.showNickname(this.x, this.y);
 
         if (this.cursors.up.isDown) {
             this.body.setVelocityY(-this.speed) 
@@ -199,30 +188,54 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
     
         if (this.cursors.space.isDown) {
-            if (this.autoIncrId % 4 == 0) {
+            if (this.autoIncrId % 4 == 0) { 
+                this.scene.game.events.emit(EVENTS_NAME.attack, (id, hp) => {
+                    if (room) { // 自己攻击的上报至服务端
+                        room.send({
+                            event: "PLAYER_BROADCAST",
+                            typ:"attack_hp",
+                            memberId:id,
+                            hp: hp,
+                        })
+                    }
+                })
+
+
                 room.send({
-                    event: "PLAYER_MOVED",
-                    action: 100,
+                    event: "PLAYER_BROADCAST",
+                    typ:"attack_action",
                     x: this.x,
                     y: this.y
                 })
             }
-            this.attackHandle()
+ 
+            this.attackHandle(room)
+        }
+    }
+    
+    addHP(room){
+        this.hp = this.hp + 10
+        this.hpValue.setText(this.hp + "")
+
+        if (room) { // 自己攻击的上报至服务端
+            room.send({
+                event: "PLAYER_BROADCAST",
+                typ:"chests_hp",
+                memberId:this.id,
+                hp: 10,
+            })
         }
     }
 
+
     netEventHandle(data) {
         this.walkingHandle(data.x, data.y, data.action) 
- 
-        if (data.action == 100) {
-            this.attackHandle()  // 攻击动画 
-        }
     }
 
     walkingHandle(x, y, action) {
         //停止上一帧之前的任何运动
         this.body.setVelocity(0);  
-        this.showPlayerNickname(x, y);
+        this.showNickname(x, y);
 
         // Player
         switch (action) {
@@ -250,8 +263,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
        this.body.setVelocity(0) // 速度设置为0
     }
 
-    attackHandle() {
-        this.scene.game.events.emit(EVENTS_NAME.attack)
+    attackHandle() { 
         this.anims.play("attack", true); // 攻击动画 
     }
  

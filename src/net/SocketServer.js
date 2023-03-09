@@ -85,14 +85,19 @@ class SocketServer {
                     })
                 })
                 break
-            case 41: // 处理发消息
-                break  
+            case 41: // 处理 消息
+                let  bcTmp  = pushPb.Broadcast.deserializeBinary(p.getBody())
+                let bcBodytmp = bcTmp.getBody()
+                let bcBody = JSON.parse(bcBodytmp)
+                if (bcBody.length <= 0) break
+                self.fn(bcBody)
+                break
             case 39: // 处理 位置  
                 let  tmps  = pushPb.PosResp.deserializeBinary(p.getBody())
                 tmps.getDataList().forEach((v) => {
                     let dst = v.getOpsList()
                     if (dst.length != 6) {
-                        console.log("------",dst)
+                      console.log("------",dst)
                       return
                     }
                     console.log(dst)
@@ -140,7 +145,7 @@ class SocketServer {
             let posReqPb2 = new pushPb.PosReq()
             posReqPb2.addOps(parseInt(data.x),1)
             posReqPb2.addOps(parseInt(data.y),2)
-            posReqPb2.addOps(data.action,3)  //动作: 如 方位/攻击/朝向
+            posReqPb2.addOps(0,3)  //动作: 如 方位/朝向
             posReqPb2.addOps(0,4)  // 舞动
             posReqPb2.addOps(0,5) 
             let tdata2= posReqPb2.serializeBinary()
@@ -155,6 +160,21 @@ class SocketServer {
             let pb = new pushPb.Proto()
             pb.setVer(1) 
             pb.setOp(29) 
+            let body = pb.serializeBinary()
+            self.ws.send(body)
+            return
+        }
+
+        // 广播数据
+        if (data.event == "PLAYER_BROADCAST")  {
+            let pb = new pushPb.Proto()
+            pb.setVer(1) 
+            pb.setOp(40) 
+            let broadcastPb = new pushPb.Broadcast()
+            let bcStr = JSON.stringify(data)
+            broadcastPb.setBody(bcStr)
+            let tdata= broadcastPb.serializeBinary()
+            pb.setBody(tdata)
             let body = pb.serializeBinary()
             self.ws.send(body)
             return
