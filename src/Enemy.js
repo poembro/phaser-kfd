@@ -14,7 +14,7 @@ const randomDirection = (exclude) => {
 export default class Enemy extends Physics.Arcade.Sprite {
     direction = Direction.RIGHT; // 方向
     target = null // 玩家
-    AGRESSOR_RADIUS = 80
+    AGRESSOR_RADIUS = 75
     attackHandler = null
 
     id = 0 // 怪物编号

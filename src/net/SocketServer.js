@@ -46,7 +46,7 @@ class SocketServer {
         ws.onmessage     =  (e) => { self.onMessage(e);}
     }
 
-    onopen( evt) {
+    onopen(evt) {
         // 上报位置. 
         let x = this.getRnd(3200,3268)
         let y = this.getRnd(3480,34900)
@@ -55,7 +55,7 @@ class SocketServer {
             x: x,
             y:y,
         })
-    /**
+        /**
         this.fn({
             event:'PLAYER_JOINED',
             memberId:this.memberId,
@@ -63,7 +63,7 @@ class SocketServer {
             y:y,
             map:"town",
         })
-       */
+        */
     }
     
     onMessage(evt) {
