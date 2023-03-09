@@ -3,10 +3,8 @@ import { Physics } from "phaser";
 
 import { EVENTS_NAME, GameStatus } from "./consts";
 
- 
- 
 // 这里这里继承的不是 游戏类对象 Phaser.GameObjects.Sprite {  
- 
+
 export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser.Types.Input.Keyboard.CursorKeys
     id = ""
     hp = 100
@@ -16,6 +14,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     speed = 100 
 
     addHPHandler = null
+    pointerupHandler= null // 点击事件处理函数
     autoIncrId = 0
     constructor(scene, worldLayer, x, y, uuid) {
         super(scene, x, y, "king");
@@ -37,7 +36,6 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setSize(30, 30);
         this.body.setOffset(8, 0);
 
-        this.cursors = scene.input.keyboard.createCursorKeys();
         
         this.id = uuid
         this.hpValue = scene.add.text((this.x) -20 + 40,  (this.y - 40), this.hp +"");
@@ -45,6 +43,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
         scene.anims.create({key: "run",  frames: scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }), frameRate: 8,}) // frameRate 帧率 8
         scene.anims.create({key: "attack",frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
+        
+        this.initEvents()
     }
 
     initEvents() { 
@@ -54,10 +54,26 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
         // EVENTS 监听事件
         this.scene.game.events.on(EVENTS_NAME.addPh, this.addHPHandler, this)
+
+        // 点击事件
+        this.pointerupHandler = (e) =>{
+            let action = 0
+            // 判断朝向
+            if ( e.x > this.x )  action = 6
+            if (! e.x > this.x )  action = 4
+            if ( e.y > this.y )  action = 2
+            if (! e.y > this.y )  action = 8
+            this.walkingHandle(e.x, e.y, action) 
+        }
+        this.scene.input.on("pointerup", this.pointerupHandler, this); 
+      
+        // 键盘事件
+        this.cursors = this.scene.input.keyboard.createCursorKeys(); 
     }
 
     destroy() {
         this.scene.game.events.removeListener(EVENTS_NAME.addPh, this.addHPHandler)
+        this.scene.input.off("pointerup", this.pointerupHandler, this)
     }
 
     addHP(){
@@ -107,7 +123,6 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
  
         this.hpValue.setPosition((x) -20 + 40, (y - 40));
         //this.hpValue.setOrigin(0.8, 0.5);
-
     }
 
 
@@ -209,7 +224,6 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setVelocity(0);  
         this.showPlayerNickname(x, y);
 
-       
         // Player
         switch (action) {
             case 2 :
