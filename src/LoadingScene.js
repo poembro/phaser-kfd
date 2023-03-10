@@ -53,5 +53,7 @@ export class LoadingScene extends Phaser.Scene {
         this.SocketServer = new SocketServer()
 
         this.scene.start("BasicsScene", {name: "GrassJson"})
+        this.scene.start("UIScene", {name: "GrassJson"})
+
     }
 }

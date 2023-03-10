@@ -39,7 +39,6 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setSize(30, 30);
         this.body.setOffset(8, 0);
  
- console.log("----->>>>>>>>>>---",this.x,this.y )
         this.id = uuid
         this.hpValue = scene.add.text( 
             (this.x) -20 + 60, 
@@ -123,7 +122,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
         this.hpValue.setText(this.hp + "");
         if (this.hp <= 0) {
-           // console.log("英雄 血量小于等于0 游戏结束")
+            console.log("英雄 血量小于等于0 游戏结束")
             this.scene.game.events.emit(EVENTS_NAME.gameEnd, GameStatus.LOSE);
         }
     }

@@ -1,6 +1,5 @@
 import  Player  from "./Player"; 
 import Enemy  from "./Enemy";
-import {UI}  from "./UI";
 import { EVENTS_NAME } from "../../consts";
 //import GrassPNG from "../../assets/tilemaps/json/Grass.png";
 
@@ -14,34 +13,31 @@ export class BasicsScene extends Phaser.Scene {
      groundLayer  = null
      chests  = null
      enemies  = null
-
-    UI = null 
+ 
     constructor() {
         super("BasicsScene");
     }
 
     preload() {
       //this.load.image("Grass", GrassPNG)// 图块图片。 
+      // 蜥蜴空闲
+        this.anims.create({
+          key: 'lizard-idle',
+          frames: this.anims.generateFrameNames('lizard', { start: 0, end: 3, prefix: 'lizard_m_idle_anim_f', suffix: '.png' }),
+          repeat: -1,
+          frameRate: 10
+      })
 
+      // 蜥蜴跑动
+      this.anims.create({
+          key: 'lizard-run',
+          frames: this.anims.generateFrameNames('lizard', { start: 0, end: 3, prefix: 'lizard_m_run_anim_f', suffix: '.png' }),
+          repeat: -1,
+          frameRate: 10
+      })
     }
 
     create(props) {
-        
-        // 蜥蜴空闲
-        this.anims.create({
-            key: 'lizard-idle',
-            frames: this.anims.generateFrameNames('lizard', { start: 0, end: 3, prefix: 'lizard_m_idle_anim_f', suffix: '.png' }),
-            repeat: -1,
-            frameRate: 10
-        })
-    
-        // 蜥蜴跑动
-        this.anims.create({
-            key: 'lizard-run',
-            frames: this.anims.generateFrameNames('lizard', { start: 0, end: 3, prefix: 'lizard_m_run_anim_f', suffix: '.png' }),
-            repeat: -1,
-            frameRate: 10
-        })
         // 1. 先创建地图
         this.initMap(props.name);
 
@@ -51,10 +47,6 @@ export class BasicsScene extends Phaser.Scene {
         this.initCamera()
  
         this.physics.add.collider(this.player, this.wallsLayer); 
-
-
-        this.UI = new UI()
-        this.UI.create(this, props)
     }
  
     update() {
@@ -62,17 +54,21 @@ export class BasicsScene extends Phaser.Scene {
       this.player.update();
     }
 
-    initMap(name) {
-        this.bg = this.add.tileSprite( 0,  0,  window.innerWidth, window.innerHeight, "water");
-        this.map = this.make.tilemap({ key: name, tileWidth: 16, tileHeight: 16,});
-        this.tileset = this.map.addTilesetImage("Grass", "Grass") // 草地图片
-        this.groundLayer = this.map.createLayer("Ground", this.tileset, 0, 0) // 地面
-        this.wallsLayer = this.map.createLayer("Walls", this.tileset, 0, 0) // 墙
-        this.wallsLayer.setCollisionByProperty({ collides: true })
+    initMap(levelName) {
+      this.bg = this.add.tileSprite(0,0, window.innerWidth, window.innerHeight, "background")
     
-        this.physics.world.setBounds(0, 0, this.wallsLayer.width, this.wallsLayer.height);
-        //this.showDebugWalls();
-      }
+      // 创建1个空地图
+      this.map = this.make.tilemap({key: levelName, tileWidth: 16, tileHeight: 16,});
+      this.tileset = this.map.addTilesetImage("Grass", "Grass") //往空地图添加 草地 图片
+      this.groundLayer = this.map.createStaticLayer("Ground", this.tileset, 0, 0); // 地面图层
+      this.wallsLayer = this.map.createStaticLayer("Walls", this.tileset, 0, 0);  // 墙 图层
+      this.wallsLayer.setCollisionByProperty({ collides: true }); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
+  
+      // 设置物理引擎检查碰撞范围
+      this.physics.world.setBounds(0, 0, this.wallsLayer.width, this.wallsLayer.height);
+ 
+         //this.showDebugWalls();
+    }
 
       initChests() {
         // 地图里面找所有宝箱的点

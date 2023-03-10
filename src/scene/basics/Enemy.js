@@ -50,10 +50,7 @@ export default class Enemy extends Physics.Arcade.Sprite {
             (this.y - 40),
             this.hp +""
           );
-        this.enemyNickname = this.scene.add.text(
-            this.x -20,
-            (this.y - 40),
-             '怪物');
+        this.enemyNickname = this.scene.add.text( this.x -20, (this.y - 40),  '怪物');
 
  
         this.moveEvent = scene.time.addEvent({
@@ -78,7 +75,7 @@ export default class Enemy extends Physics.Arcade.Sprite {
         
          this.on("destroy", () => {
             console.log("    这里被调用了this.on(destroy, () => {")
-             this.scene.game.events.removeListener(EVENTS_NAME.attack, this.attackHandler)
+            this.scene.game.events.removeListener(EVENTS_NAME.attack, this.attackHandler)
         });
     }
 

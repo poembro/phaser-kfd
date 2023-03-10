@@ -1,4 +1,3 @@
-import {UI}   from "./UI"; 
 import  Player  from "./Player"; 
 import Enemy  from "./Enemy"; 
 //import { EVENTS_NAME } from "../../consts";
@@ -16,8 +15,7 @@ export class WuhanScene extends Phaser.Scene {
     chests  = null
     enemies  = null 
     SocketServer = null // 网络服务对象
-
-    UI = null 
+ 
     constructor() {
         super("WuhanScene")
     }
@@ -46,9 +44,7 @@ export class WuhanScene extends Phaser.Scene {
         this.initPlayer(props.name)
         
         this.initCamera() 
-
-        this.UI = new UI()
-        this.UI.create(this, props)
+ 
     }
   
     // ltime 当前时间。一个高分辨率定时器值，如果它来自请求动画帧，或日期。现在如果使用SetTimeout。

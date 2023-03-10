@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import {LoadingScene} from "./LoadingScene";
 import {BasicsScene} from "./scene/basics/BasicsScene"; 
 import {WuhanScene} from "./scene/wuhan/WuhanScene"; 
-
+import {UIScene} from "./UIScene";
 
 function sizeChanged() {
   // isBooted 指示游戏实例何时完成引导过程的标志。
@@ -46,7 +46,7 @@ const Config = {
   audio: {
     disableWebAudio: false,
   },
-  scene: [LoadingScene, BasicsScene, WuhanScene],
+  scene: [LoadingScene, BasicsScene, WuhanScene, UIScene],
   winScore: 100,
 };
 
