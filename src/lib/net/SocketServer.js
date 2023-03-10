@@ -1,41 +1,45 @@
 import "google-protobuf"  
 import pushPb from './push_pb'
 
-/*================================================
-| Array with current online players
-*/
 let onlinePlayers = [];
- 
+let domainHttp = "http://127.0.0.1:14020"
+let domainWs = "ws://127.0.0.1:14020"
+
+//let domainHttp = "http://47.111.69.116:8080"
+//let domainWs = "ws://47.111.69.116:8080"
+
 class SocketServer {
     memberId = 0
     key = ""
     ws = null
     fn = null
+
+    item = null
     //heartbeatInterval  = null
     constructor() {
-
+        let resp  = this.ajax({
+            type:"GET",
+            url:domainHttp + "/v2/ws/comet/GetToken",
+            data:{id: this.getQuery("id") ? this.getQuery("id") :this.getRnd(1,100000)}
+        })
+        this.item = resp.data
     }
+
     getQuery (name){
         var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
         var r = window.location.search.substr(1).match(reg);
         if(r!=null)return  unescape(r[2]); return null;
     }
 
-    conn(fn){ 
+    conn(fn){
         this.fn = fn  
-
-        let self = this 
-        let resp  = this.ajax({
-            type:"GET",
-            url:"http://127.0.0.1:14020/v2/ws/comet/GetToken",
-            data:{id: this.getQuery("id") ? this.getQuery("id") :this.getRnd(1,100000)}
-        })
+        let self = this
         
-        let item = resp.data
+        let item = this.item
         self.key = item.nickname
         self.memberId = item.id
     
-        let ws = new WebSocket( 'ws://127.0.0.1:14020/v2/ws?token=' +  item.token);
+        let ws = new WebSocket( domainWs +'/v2/ws?token=' +  item.token);
         self.ws = ws
         ws.binaryType = 'arraybuffer';
         ws.onopen         = () => {

@@ -1,30 +1,25 @@
-import Phaser from "phaser";
-
-import { ScoreOperations, GameStatus ,LEVELS, EVENTS_NAME} from "./consts";
-import {onlinePlayers} from './net/SocketServer';
+import { ScoreOperations, GameStatus ,LEVELS, EVENTS_NAME} from "../../consts";
+import {onlinePlayers} from '../../lib/net/SocketServer';
 
  
-export class UIScene extends Phaser.Scene {
+class UI  {
     score = null
     levelName = ""
     gameEndPhrase = null
     scoreValue = 0
 
+    scene = null
     constructor() {
-        super("ui-scene"); 
     }
-
-    preload() {
-    } 
-
-    create(props) { 
+    
+    create(scene, props) {
         this.levelName = props.name; //props.name = Level-1
-        this.score = this.add.text(20,20,0).setFontSize(12).setOrigin(0.8, 0.5);
-        this.initListeners();
+        this.score = scene.add.text(20,20,0).setFontSize(12).setOrigin(0.8, 0.5);
+        this.initListeners(scene);
     }
-    initListeners() {
-        this.game.events.on(EVENTS_NAME.chestLoot, this.chestLootHandler, this);
-        this.game.events.once(EVENTS_NAME.gameEnd, this.gameEndHandler, this);
+    initListeners(scene) {
+        scene.game.events.on(EVENTS_NAME.chestLoot, this.chestLootHandler, scene);
+        scene.game.events.once(EVENTS_NAME.gameEnd, this.gameEndHandler, scene);
     }
 
     gameEndHandler (status) { // 游戏结束标识
@@ -48,11 +43,11 @@ export class UIScene extends Phaser.Scene {
         )
   
         // 监听键盘 按下点击
-        this.input.on("pointerdown", () => { 
+        this.input.on("pointerdown", () => {
           this.game.events.off(EVENTS_NAME.chestLoot, this.chestLootHandler);
           this.game.events.off(EVENTS_NAME.gameEnd, this.gameEndHandler);
-          this.scene.get("game-scene").scene.restart({ name: "Level-1" });
-          this.scene.restart({ name: "Level-1" });
+          this.scene.get("WuhanScene").scene.restart({ name: "Level-1" });
+          //this.scene.restart({ name: "Level-1" });
         })
     }
 
@@ -73,7 +68,7 @@ export class UIScene extends Phaser.Scene {
                 this.game.events.off(EVENTS_NAME.gameEnd, this.gameEndHandler)
 
                 this.scene.get("game-scene").scene.restart({ name: nextLevel.name })
-                this.scene.restart({ name: nextLevel.name })
+                //this.scene.restart({ name: nextLevel.name })
                 this.levelName = nextLevel.name
             } else {
                 if (this.scoreValue === 100) {
@@ -101,3 +96,6 @@ export class UIScene extends Phaser.Scene {
     }
  
 }
+
+
+export {UI};

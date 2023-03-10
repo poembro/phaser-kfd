@@ -1,6 +1,6 @@
 import Phaser from "phaser"
 import { Physics } from "phaser"
-import { Direction, EVENTS_NAME} from "./consts"
+import { Direction, EVENTS_NAME} from "../../consts";
 
 const randomDirection = (exclude) => {
     let newDirection = Phaser.Math.Between(0, 3)

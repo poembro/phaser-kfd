@@ -11,19 +11,24 @@ import lizardAtlasJSON from "./assets/spritesheets/lizard.json";
 import GrassPNG from "./assets/tilemaps/json/Grass.png";
  
 // tiled 软件导出的json 地图
-import level1JSON from "./assets/tilemaps/json/level-1.json"; 
-import Level2JSON from "./assets/tilemaps/json/Grass.json";
+import GrassJSON from "./assets/tilemaps/json/Grass.json";
 
 
 import backgroundPNG from "./assets/spritesheets/background.png"
 import foodPNG from "./assets/spritesheets/food.png"
 
+
+import {SocketServer} from './lib/net/SocketServer';
+
 export class LoadingScene extends Phaser.Scene {
+
+    SocketServer = null
+
     constructor() {
-        super("bootGame");
+        super("LoadingScene")
     }
 
-    preload() { 
+    preload() {
         //this.load.baseURL = "http://localhost:8080/assets/";
         this.load.image("king", kingPNG);
 
@@ -38,15 +43,15 @@ export class LoadingScene extends Phaser.Scene {
         // this.load.multiatlas('fire', 'assets/sprites/fire.json', 'assets/sprites')
 
 
-        this.load.tilemapTiledJSON("Level-1", level1JSON);
-        this.load.tilemapTiledJSON("Level-2", Level2JSON);
+        this.load.tilemapTiledJSON("GrassJson", GrassJSON);
     
         this.load.spritesheet("background", backgroundPNG, {frameWidth: 64, frameHeight: 16})
         this.load.spritesheet("food", foodPNG, {frameWidth: 32, frameHeight: 32})
     }
 
     create() {
-        this.scene.start("game-scene", {name: "Level-1"});
-        this.scene.start("ui-scene", {name: "Level-1"});
+        this.SocketServer = new SocketServer()
+
+        this.scene.start("BasicsScene", {name: "GrassJson"})
     }
 }

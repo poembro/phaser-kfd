@@ -1,11 +1,12 @@
+import {UI}   from "./UI"; 
 import  Player  from "./Player"; 
 import Enemy  from "./Enemy"; 
-import { EVENTS_NAME } from "./consts";
-import {onlinePlayers, SocketServer} from './net/SocketServer';
+//import { EVENTS_NAME } from "../../consts";
+import {onlinePlayers, SocketServer} from '../../lib/net/SocketServer';
 
  
 // 一个基础场景类，可以扩展为您自己使用。默认方法三个 init() preload() create()。
-export class GameScene extends Phaser.Scene {
+export class WuhanScene extends Phaser.Scene {
     player = null
     bg = null
     map = null
@@ -15,15 +16,18 @@ export class GameScene extends Phaser.Scene {
     chests  = null
     enemies  = null 
     SocketServer = null // 网络服务对象
+
+    UI = null 
     constructor() {
-        super("game-scene");
+        super("WuhanScene")
     }
 
     preload() {
         // UI那边 调用scene.restart(game-scene) 本类所有东西会重新执行
     }
     
-    create(props) {  
+    create(props) {
+       
         // 蜥蜴空闲
         this.anims.create({key: 'lizard-idle',
             frames: this.anims.generateFrameNames('lizard', { start: 0, end: 3, prefix: 'lizard_m_idle_anim_f', suffix: '.png' }),
@@ -42,11 +46,14 @@ export class GameScene extends Phaser.Scene {
         this.initPlayer(props.name)
         
         this.initCamera() 
+
+        this.UI = new UI()
+        this.UI.create(this, props)
     }
   
     // ltime 当前时间。一个高分辨率定时器值，如果它来自请求动画帧，或日期。现在如果使用SetTimeout。
     // delta 从上一帧开始的时间单位是毫秒。这是一个基于FPS速率的平滑和上限值
-    update(ltime,delta) {
+    update(ltime, delta) {
       this.bg.setPosition()
       this.player.update(this.SocketServer)
     }

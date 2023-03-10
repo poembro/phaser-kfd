@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import {LoadingScene} from "./LoadingScene";
-import {GameScene} from "./GameScene";
-import {UIScene} from "./UIScene";
+import {BasicsScene} from "./scene/basics/BasicsScene"; 
+import {WuhanScene} from "./scene/wuhan/WuhanScene"; 
 
 
 function sizeChanged() {
@@ -46,7 +46,7 @@ const Config = {
   audio: {
     disableWebAudio: false,
   },
-  scene: [LoadingScene, GameScene, UIScene],
+  scene: [LoadingScene, BasicsScene, WuhanScene],
   winScore: 100,
 };
 

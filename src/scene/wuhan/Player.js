@@ -1,7 +1,7 @@
 //import {onlinePlayers, room} from './net/SocketServer';
 import { Physics } from "phaser";
 
-import { EVENTS_NAME, GameStatus } from "./consts";
+import { EVENTS_NAME, GameStatus } from "../../consts";
 
 // 这里这里继承的不是 游戏类对象 Phaser.GameObjects.Sprite {  
 
