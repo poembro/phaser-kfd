@@ -3,6 +3,7 @@ import {LoadingScene} from "./LoadingScene";
 import {BasicsScene} from "./scene/basics/BasicsScene"; 
 import {WuhanScene} from "./scene/wuhan/WuhanScene"; 
 import {UIScene} from "./UIScene";
+//import VirtualJoystickPlugin from 'phaser3-rex-plugins/plugins/virtualjoystick-plugin.js';
 
 function sizeChanged() {
   // isBooted 指示游戏实例何时完成引导过程的标志。
@@ -18,8 +19,8 @@ const Config = {
   type: Phaser.AUTO,
   //parent: "app",
   backgroundColor: "#9bd4c3",
-  width: 1920,
-  height: 1080,
+  width: 16*100,
+  height: 16*100,
   
   scale: {
     //mode: Scale.ScaleModes.NONE,
@@ -48,6 +49,14 @@ const Config = {
   },
   scene: [LoadingScene, BasicsScene, WuhanScene, UIScene],
   winScore: 100,
+  plugins:{
+    global: [{
+      //key: 'rexVirtualJoystick',
+      //plugin: VirtualJoystickPlugin,
+      //start: true
+
+    }]
+  }
 };
 
 window.onresize = () => sizeChanged();

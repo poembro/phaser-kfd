@@ -31,6 +31,10 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.scene.physics.world.enableBody(this);
         this.scene.physics.add.collider(this, worldLayer);
  
+        this.setDepth(1);
+        this.setOrigin(0,0.5);
+
+
         // Register cursors for player movement
         this.cursors = this.scene.input.keyboard.createCursorKeys();
         //this.spacebar = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -40,38 +44,29 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setOffset(8, 0);
  
         this.id = uuid
-        this.hpValue = scene.add.text( 
-            (this.x) -20 + 60, 
-            (this.y - 40),
-            this.hp +""
-          );
+        this.hpValue = scene.add.text((this.x) -20 + 60,  (this.y - 40), this.hp +"" );
  
 
-        this.playerNickname = this.scene.add.text(
-            this.x -20,
-            (this.y - 40),
-             'Player');
+        this.playerNickname = this.scene.add.text( this.x -20, (this.y - 40), 'Player');
 
-        this.scene.anims.create({
+        this.scene.anims.create({ 
             key: "run",
             frames: this.scene.anims.generateFrameNames("a-king", {
               prefix: "run-",
               end: 7,
             }),
             frameRate: 8,
-          });
+        });
       
-          this.scene.anims.create({
+        this.scene.anims.create({
             key: "attack",
             frames: this.scene.anims.generateFrameNames("a-king", {
               prefix: "attack-",
               end: 2,
             }),
             frameRate: 8,
-          });
-
-
-
+        });
+ 
         this.addHPHandler = (e) =>{
             // 加血
             this.hp = this.hp + 10;
@@ -83,7 +78,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.on("destroy", () => {
             console.log("    这里被调用了this.on(destroy, () => {")
             this.scene.game.events.removeListener(EVENTS_NAME.addPh, this.addHPHandler)
-        });
+        })
     }
 
     addHP(){
@@ -126,21 +121,12 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.scene.game.events.emit(EVENTS_NAME.gameEnd, GameStatus.LOSE);
         }
     }
-
-    showPlayerNickname() {
-        this.playerNickname.x = this.x -20;
-        this.playerNickname.y = (this.y - 40);
  
-        this.hpValue.setPosition((this.x) -20 + 60, (this.y - 40));
-        //this.hpValue.setOrigin(0.8, 0.5);
-
-    }
-
     update() {
         //停止上一帧之前的任何运动
         this.body.setVelocity(0);
         // Show player nickname above player
-        this.showPlayerNickname();
+        this.showNickname(this.x, this.y);
 
         if (this.cursors.up.isDown) {
             this.body.setVelocityY(-this.speed) 
@@ -174,4 +160,46 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
     }
  
+    showNickname(x,y) {
+        this.playerNickname.x = x -20;
+        this.playerNickname.y = (y - 40);
+ 
+        this.hpValue.setPosition((x) -20 + 40, (y - 40));
+        //this.hpValue.setOrigin(0.8, 0.5);
+    }
+
+    netEventHandle(data) {
+        this.walkingHandle(data.x, data.y, data.action) 
+    }
+
+    walkingHandle(x, y, action) {
+        //停止上一帧之前的任何运动
+        this.body.setVelocity(0);  
+        this.showNickname(x, y);
+
+        // Player
+        switch (action) {
+            case 2 :
+                this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
+            case 4:
+                this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
+                this.checkFlip();
+                this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
+                break;
+            case 6:
+                this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
+                this.checkFlip();
+                this.body.setOffset(15, 15);
+                break
+            case 8:
+                this.body.setVelocityY(-this.speed) 
+            default:
+               this.body.setOffset(8, 0) 
+        }
+       
+       !this.anims.isPlaying && this.anims.play("run", true);
+       this.setPosition(x, y)  //通用设置位置
+       this.anims.stop()
+       this.body.setVelocity(0) // 速度设置为0
+    }
 }

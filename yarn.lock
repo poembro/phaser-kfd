@@ -4343,13 +4343,18 @@
     "safe-buffer" "^5.0.1"
     "sha.js" "^2.4.8"
 
-"phaser@^3.50.0":
+"phaser@^3.50.0", "phaser@^3.x":
   "integrity" "sha512-amKXsbb2Ht29dGPKvt1edq3yGGYKtq8373GpJYGKPNPnneYY6MtVTOgjHDuZwtmUyK4v86FugkT3hzW/N4tjxQ=="
   "resolved" "https://registry.npmmirror.com/phaser/-/phaser-3.55.2.tgz"
   "version" "3.55.2"
   dependencies:
     "eventemitter3" "^4.0.7"
     "path" "^0.12.7"
+
+"phaser3-vjoy-plugin@^1.0.3":
+  "integrity" "sha512-7Ws8lyVF9d7qzj3Puif+xlz2MKkhxaHxzuRVP9SYz1K2bLjntIi5WAc0XSQxazXlMPa9qXow8bxXpKdILGowIQ=="
+  "resolved" "https://registry.npmmirror.com/phaser3-vjoy-plugin/-/phaser3-vjoy-plugin-1.0.3.tgz"
+  "version" "1.0.3"
 
 "picocolors@^1.0.0":
   "integrity" "sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ=="
