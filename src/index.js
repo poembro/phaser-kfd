@@ -1,7 +1,11 @@
 import Phaser from "phaser";
+
+import {BootScene} from "./scene/boot/BootScene"; 
 import {LoadingScene} from "./LoadingScene";
+
 import {BasicsScene} from "./scene/basics/BasicsScene"; 
-import {WuhanScene} from "./scene/wuhan/WuhanScene"; 
+import {JuniorScene} from "./scene/junior/JuniorScene"; 
+
 import {UIScene} from "./UIScene";
 //import VirtualJoystickPlugin from 'phaser3-rex-plugins/plugins/virtualjoystick-plugin.js';
 
@@ -20,8 +24,7 @@ const Config = {
   //parent: "app",
   backgroundColor: "#9bd4c3",
   width: 16*100,
-  height: 16*100,
-  
+  height: 16*100, 
   scale: {
     //mode: Scale.ScaleModes.NONE,
     width: window.innerWidth,
@@ -47,7 +50,7 @@ const Config = {
   audio: {
     disableWebAudio: false,
   },
-  scene: [LoadingScene, BasicsScene, WuhanScene, UIScene],
+  scene: [ LoadingScene, BasicsScene, JuniorScene, UIScene],
   winScore: 100,
   plugins:{
     global: [{

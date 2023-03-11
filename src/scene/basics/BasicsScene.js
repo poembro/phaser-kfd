@@ -37,12 +37,11 @@ export class BasicsScene extends Phaser.Scene {
     
     }
 
-    create(props) { 
- 
+    create(props) {
         // 1. 先创建地图
         this.initMap(props.name);
 
-        this.player = new Player(this, this.wallsLayer, 0, 0, "张三"); // 创建玩家(自己)
+        this.player = new Player(this, this.wallsLayer, 0, 0, "我"); // 创建玩家(自己)
      
 
         this.initChests() 
@@ -60,9 +59,99 @@ export class BasicsScene extends Phaser.Scene {
 
         this.findpath()
     }
+
+  
+    update() { 
+      this.findpathUpdate()
+      //this.bg.setPosition();
+      this.player.update();
+    }
+
+    initMap(levelName) {
+      //this.bg = this.add.tileSprite(0,0, window.innerWidth, window.innerHeight, "background")
+    
+      // 创建1个空地图
+      this.map = this.make.tilemap({key: levelName, tileWidth: 16, 
+        tileHeight: 16,width:100,height:100,
+        insertNull:false //如果你有一个大的稀疏分布的地图，并且贴图数据不需要改变，那么将这个值设置为true将有助于减少内存消耗。然而，如果你的地图很小，或者你需要动态更新贴图，那么就保留默认值。
+      });
+       //console.log(this.map)
+      this.tileset = this.map.addTilesetImage("Grass", "Grass") //往空地图添加 草地 图片
+      this.groundLayer = this.map.createLayer("Ground", this.tileset, 0, 0); // 地面图层
+      this.wallsLayer = this.map.createLayer("Walls", this.tileset, 0, 0);  // 墙 图层
+      
+      // 参数1   应该检查的具有tile属性和相应值的对象。
+      // 参数2 如果为真，它将启用碰撞。如果为false，则清除碰撞。
+      // 参数3 更新后是否重新计算贴图面。
+      // 参数4 瓷砖层使用。如果没有给定，则使用当前层。
+      this.wallsLayer.setCollisionByProperty({ collides: true }, true, true,"Walls" ); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
+  
+      // 设置物理引擎检查碰撞范围
+      this.physics.world.setBounds(0, 0, 16*100, 16*100);
  
-    findpath() { 
-        // 自动寻路
+      this.showDebugWalls();
+    }
+
+    initChests() {
+        // 地图里面找所有宝箱的点
+        const chestPoints = this.map.filterObjects("Chests", (obj) => obj.name === "ChestPoint");
+
+        
+        this.chests = chestPoints.map((chestPoint) => this.physics.add.sprite(
+              chestPoint.x ,
+              chestPoint.y ,
+              "food",
+              Math.floor(Math.random() * 8)
+            ).setScale(0.5)
+        )
+    
+        this.chests.forEach((chest) => {
+          // @ts-ignore
+          this.physics.add.overlap(this.player, chest, (obj1, obj2) => {
+            //this.game.events.emit(EVENTS_NAME.chestLoot) // 加 通关条件
+           
+            //this.game.events.emit(EVENTS_NAME.addPh) // 加血
+            obj1.addHP()
+            //console.log("玩家  ",obj1.id, " 捡 到宝贝 ", obj2)
+            obj2.destroy();
+          })
+        }) 
+    }
+
+    initEnemies() {
+        let self = this 
+        const enemiesPoints = this.map.filterObjects("Enemies",  (obj) => obj.name === "EnemyPoint");
+          this.enemies = enemiesPoints.map((enemyPoint, id) =>
+              new Enemy( this, enemyPoint.x , enemyPoint.y , self.player , id)
+            //.setScale(1.5)
+          );
+      
+          this.physics.add.collider(this.enemies, this.wallsLayer);
+          this.physics.add.collider(this.enemies, this.enemies);
+          this.physics.add.collider(self.player, 
+            this.enemies, 
+            function(obj1, obj2){
+                obj1.getDamage(1)
+                obj2.getDamage(1) 
+                //console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
+            },
+            undefined,
+            this);
+    }
+   
+
+    showDebugWalls() {
+        const debugGraphics = this.add.graphics().setAlpha(0.7);
+        this.wallsLayer.renderDebug(debugGraphics, {
+          tileColor: null,
+          collidingTileColor: new Phaser.Display.Color(243, 234, 48, 255),
+        });
+    }
+
+
+
+     // 自动寻路
+    findpath() {
         this.input.on('pointerup',this.handleClick, this);
         this.marker = this.add.graphics();  // 点击的时候有个鼠标框框
         this.marker.lineStyle(3, 0xffffff, 1);
@@ -106,29 +195,29 @@ export class BasicsScene extends Phaser.Scene {
         this.finder.setAcceptableTiles(acceptableTiles);
     }
 
-  handleClick(pointer){
-    //console.log("--------> ",  pointer.x,"--------> ",  pointer.y)
-    let self = this
-    var x = this.cameras.main.scrollX + pointer.x;
-    var y = this.cameras.main.scrollY + pointer.y;
-    //console.log("--------> ",  pointer.x,"--------> ",  pointer.y,"--------> ",  x,"--------> ",  y )
-    var toX = Math.floor(x/16);
-    var toY = Math.floor(y/16);
-   // console.log(this.player)
-    var fromX = Math.floor(this.player.x/16);
-    var fromY = Math.floor(this.player.y/16);
-    //console.log('going from ('+fromX+','+fromY+') to ('+toX+','+toY+')');
+    handleClick(pointer){
+      //console.log("--------> ",  pointer.x,"--------> ",  pointer.y)
+      let self = this
+      var x = this.cameras.main.scrollX + pointer.x;
+      var y = this.cameras.main.scrollY + pointer.y;
+      //console.log("--------> ",  pointer.x,"--------> ",  pointer.y,"--------> ",  x,"--------> ",  y )
+      var toX = Math.floor(x/16);
+      var toY = Math.floor(y/16);
+    // console.log(this.player)
+      var fromX = Math.floor(this.player.x/16);
+      var fromY = Math.floor(this.player.y/16);
+      //console.log('going from ('+fromX+','+fromY+') to ('+toX+','+toY+')');
 
-    this.finder.findPath(fromX, fromY, toX, toY, function( path ) {
-        if (path === null) {
-            console.warn("Path was not found.");
-        } else {
-            //console.log(path);
-            self.moveCharacter(path);
-        }
-    });
-    this.finder.calculate(); // don't forget, otherwise nothing happens
-  }
+      this.finder.findPath(fromX, fromY, toX, toY, function( path ) {
+          if (path === null) {
+              console.warn("Path was not found.");
+          } else {
+              //console.log(path);
+              self.moveCharacter(path);
+          }
+      });
+      this.finder.calculate(); // don't forget, otherwise nothing happens
+    }
 
     moveCharacter (path){
       // 设置一个补间列表，每个瓷砖走一个，将由时间轴链接
@@ -138,8 +227,8 @@ export class BasicsScene extends Phaser.Scene {
           var ey = path[i+1].y;
           tweens.push({
               targets: this.player,
-              x: {value: ex*this.map.tileWidth, duration: 200},
-              y: {value: ey*this.map.tileHeight, duration: 200}
+              x: {value: ex*this.map.tileWidth, duration: 100},
+              y: {value: ey*this.map.tileHeight, duration: 100}
           });
       }
 
@@ -159,21 +248,19 @@ export class BasicsScene extends Phaser.Scene {
         this.time.addEvent({
             delay: 2000,
             callback: () => {
-                e.targets.walkingHandle(x, y, action)  
+                e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
             },
             loop: false,
         });
         */   
       })
-      /**  暂时不用间补动画移动人物  采用物理引擎帧动画  */
+      /**  间补动画移动人物    */
       this.scene.scene.tweens.timeline({
           tweens: tweens
-      });
-      
+      }); 
     }
     findpathUpdate() {
-      var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main);
-
+      var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main) 
       // 世界地图中的xy坐标 映射到  瓦片 xy
       var pointerTileX = this.map.worldToTileX(worldPoint.x);
       var pointerTileY = this.map.worldToTileY(worldPoint.y);
@@ -185,9 +272,7 @@ export class BasicsScene extends Phaser.Scene {
 
     checkCollision(x,y){
       let tile = this.map.getTileAt(x, y);
-      if (tile) {
-        //console.log("----b index: ", tile.index, "-----", tile.properties)
-
+      if (tile) { 
         return tile.properties.collide == true;
       } 
       return false 
@@ -205,94 +290,5 @@ export class BasicsScene extends Phaser.Scene {
       //console.log("---------","x",x, "y",y, tile)
       return tile.index;
     }
-
-  
-    update() { 
-      this.findpathUpdate()
-      //this.bg.setPosition();
-      this.player.update();
-    }
-
-    initMap(levelName) {
-      //this.bg = this.add.tileSprite(0,0, window.innerWidth, window.innerHeight, "background")
-    
-      // 创建1个空地图
-      this.map = this.make.tilemap({key: levelName, tileWidth: 16, 
-        tileHeight: 16,width:100,height:100,
-        insertNull:false //如果你有一个大的稀疏分布的地图，并且贴图数据不需要改变，那么将这个值设置为true将有助于减少内存消耗。然而，如果你的地图很小，或者你需要动态更新贴图，那么就保留默认值。
-      });
-       //console.log(this.map)
-      this.tileset = this.map.addTilesetImage("Grass", "Grass") //往空地图添加 草地 图片
-      this.groundLayer = this.map.createLayer("Ground", this.tileset, 0, 0); // 地面图层
-      this.wallsLayer = this.map.createLayer("Walls", this.tileset, 0, 0);  // 墙 图层
-      
-      // 参数1   应该检查的具有tile属性和相应值的对象。
-      // 参数2 如果为真，它将启用碰撞。如果为false，则清除碰撞。
-      // 参数3 更新后是否重新计算贴图面。
-      // 参数4 瓷砖层使用。如果没有给定，则使用当前层。
-      this.wallsLayer.setCollisionByProperty({ collides: true }, true, true,"Walls" ); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
-  
-      // 设置物理引擎检查碰撞范围
-      this.physics.world.setBounds(0, 0, 16*100, 16*100);
  
-      this.showDebugWalls();
-    }
-
-      initChests() {
-        // 地图里面找所有宝箱的点
-        const chestPoints = this.map.filterObjects("Chests", (obj) => obj.name === "ChestPoint");
-
-        
-        this.chests = chestPoints.map((chestPoint) => this.physics.add.sprite(
-              chestPoint.x ,
-              chestPoint.y ,
-              "food",
-              Math.floor(Math.random() * 8)
-            ).setScale(0.5)
-        )
-    
-        this.chests.forEach((chest) => {
-          // @ts-ignore
-          this.physics.add.overlap(this.player, chest, (obj1, obj2) => {
-            //this.game.events.emit(EVENTS_NAME.chestLoot) // 加 通关条件
-           
-            //this.game.events.emit(EVENTS_NAME.addPh) // 加血
-            obj1.addHP()
-            //console.log("玩家  ",obj1.id, " 捡 到宝贝 ", obj2)
-            obj2.destroy();
-          })
-        }) 
-    }
-
-    initEnemies() {
-         let self = this
-         
-        const enemiesPoints = this.map.filterObjects("Enemies",  (obj) => obj.name === "EnemyPoint");
-          this.enemies = enemiesPoints.map((enemyPoint, id) =>
-              new Enemy( this, enemyPoint.x , enemyPoint.y , self.player , id)
-            //.setScale(1.5)
-          );
-      
-          this.physics.add.collider(this.enemies, this.wallsLayer);
-          this.physics.add.collider(this.enemies, this.enemies);
-          this.physics.add.collider(self.player, 
-            this.enemies, 
-            function(obj1, obj2){
-                obj1.getDamage(1)
-                obj2.getDamage(1) 
-                console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
-            },
-            undefined,
-            this);
-    }
-   
-
-    showDebugWalls() {
-        const debugGraphics = this.add.graphics().setAlpha(0.7);
-        this.wallsLayer.renderDebug(debugGraphics, {
-          tileColor: null,
-          collidingTileColor: new Phaser.Display.Color(243, 234, 48, 255),
-        });
-      }
-
 }

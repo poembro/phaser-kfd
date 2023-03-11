@@ -44,10 +44,10 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setOffset(8, 0);
  
         this.id = uuid
-        this.hpValue = scene.add.text((this.x) -20 + 60,  (this.y - 40), this.hp +"" );
+        this.hpValue = scene.add.text((this.x) -20 + 40,  (this.y - 40), this.hp +"" );
  
 
-        this.playerNickname = this.scene.add.text( this.x -20, (this.y - 40), 'Player');
+        this.playerNickname = this.scene.add.text( this.x -20, (this.y - 40), uuid+'');
 
         this.scene.anims.create({ 
             key: "run",
@@ -152,11 +152,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
     
         if (this.cursors.space.isDown) {
-            console.log(" 按攻击键后 执行")
-
             this.scene.game.events.emit(EVENTS_NAME.attack)
             this.anims.play("attack", true); // 攻击动画
-
         }
     }
  
