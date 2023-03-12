@@ -43,8 +43,32 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.hpValue = scene.add.text((this.x) -20 + 40,  (this.y - 40), this.hp +"");
         this.playerNickname = scene.add.text(this.x -20, (this.y - 40), net.nickname);
 
-        scene.anims.create({key: "run",  frames: scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }), frameRate: 8,}) // frameRate 帧率 8
+
+        
         scene.anims.create({key: "attack",frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
+        
+        //scene.anims.create({key: "run",  frames: scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }), frameRate: 8,}) // frameRate 帧率 8
+
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'turn',
+            frames: [ { key: 'dude', frame: 4 } ],
+            frameRate: 20
+        });
+
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
         
         this.initEvents()
     }
@@ -131,7 +155,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
         if (this.cursors.up.isDown) {
             this.body.setVelocityY(-this.speed) 
-            !this.anims.isPlaying && this.anims.play("run", true);
+            this.anims.play("turn", true);
 
             if (this.autoIncrId % 4 == 0) {
                 this.SocketServer.send({
@@ -141,11 +165,9 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                     y: this.y
                 }) 
             }
-        }
-
-        if (this.cursors.down.isDown) {
+        } else if (this.cursors.down.isDown) {
             this.body.velocity.y = 110;
-            !this.anims.isPlaying && this.anims.play("run", true);
+            this.anims.play("turn", true);
 
             if (this.autoIncrId % 4 == 0) {
                 this.SocketServer.send({
@@ -155,13 +177,9 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                     y: this.y
                 }) 
             }
-        }
-
-        if (this.cursors.left.isDown) {
+        }else if (this.cursors.left.isDown) {
             this.body.setVelocityX(-this.speed)
-            this.checkFlip();
-            this.body.setOffset(48, 15)
-            !this.anims.isPlaying && this.anims.play("run", true) 
+            this.anims.play("left", true) 
 
             if (this.autoIncrId % 4 == 0) {
                 this.SocketServer.send({
@@ -171,13 +189,9 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                     y: this.y
                 })
             }
-        } 
-        
-        if (this.cursors.right.isDown) {
+        } else if (this.cursors.right.isDown) {
             this.body.setVelocityX(this.speed)
-            this.checkFlip();
-            this.body.setOffset(15, 15);
-            !this.anims.isPlaying && this.anims.play("run", true);
+            this.anims.play("right", true);
 
             if (this.autoIncrId % 4 == 0) {
                 this.SocketServer.send({
@@ -187,9 +201,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                     y: this.y
                 })
             }
-        }
-    
-        if (this.cursors.space.isDown) {
+        }else if (this.cursors.space.isDown) {
             if (this.autoIncrId % 4 == 0) { 
                 let net = this.SocketServer
                 this.scene.game.events.emit(EVENTS_NAME.attack, (id, hp) => {
@@ -213,6 +225,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             }
  
             this.attackHandle()
+        } else {  
+            this.anims.play("turn"); 
         }
     }
     
@@ -239,33 +253,36 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
     walkingHandle(x, y, action) {
         //停止上一帧之前的任何运动
-        this.body.setVelocity(0);  
         this.showNickname(x, y);
+        this.body.setVelocity(0) // 速度设置为0
 
         // Player
         switch (action) {
-            case 2 :
+            case 2:
                 this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
+                this.anims.play("turn");
+                console.log("------", 2)
             case 4:
                 this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
-                this.checkFlip();
-                this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
+                //this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
+                 this.anims.play("left", true);
+                 console.log("----播放向左--", 4)
                 break;
             case 6:
                 this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
-                this.checkFlip();
-                this.body.setOffset(15, 15);
+                this.anims.play("right", true);
+                console.log("----播放向右--", 6)
                 break
             case 8:
                 this.body.setVelocityY(-this.speed) 
+                this.anims.play("turn");
+                console.log("----播放向上--", 8)
             default:
-               this.body.setOffset(8, 0) 
+               this.anims.play("turn");
         }
        
-       !this.anims.isPlaying && this.anims.play("run", true);
        this.setPosition(x, y)  //通用设置位置
-       this.anims.stop()
-       this.body.setVelocity(0) // 速度设置为0
+       //this.anims.stop()
     }
 
     attackHandle() { 

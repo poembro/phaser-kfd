@@ -242,7 +242,7 @@ export class JuniorScene extends Phaser.Scene {
     }
 
     moveCharacter (path){
-        let self = this
+      let self = this
       // 设置一个补间列表，每个瓷砖走一个，将由时间轴链接
       var tweens = [];
       for(var i = 0; i < path.length-1; i++){
@@ -250,17 +250,13 @@ export class JuniorScene extends Phaser.Scene {
           var ey = path[i+1].y;
           tweens.push({
               targets: this.player,
-              x: {value: ex*this.map.tileWidth, duration: 500},
-              y: {value: ey*this.map.tileHeight, duration: 500}
+              x: {value: ex*this.map.tileWidth, duration: 200},
+              y: {value: ey*this.map.tileHeight, duration: 200}
           });
       }
 
-      let a = []
-      let b = []
-      let c = []
-      let n = 0
-      let total = tweens.length
-      tweens.forEach((e) =>{
+      
+      tweens.forEach((e, index) =>{
         // 计算朝向
         let action = 0
         let x =  e.x.value
@@ -272,52 +268,37 @@ export class JuniorScene extends Phaser.Scene {
         if ( y > e.targets.y )  action = 2
         if (! y > e.targets.y )  action = 8
 
-        /**
-        this.time.addEvent({
-            delay: 2000,
-            callback: () => {
-                e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
-            },
-            loop: false,
-        });
-        */
-       if (n==0) {
-        a.push({
-            event: "PLAYER_MOVED",
-            action: action,
-            x: x,
-            y: y
-        })
-       }else if (n == total - 1) {
-        c.push({
-            event: "PLAYER_MOVED",
-            action: action,
-            x: x,
-            y: y
-        })
-       }else{
-           b.push({
-            event: "PLAYER_MOVED",
-            action: action,
-            x: x,
-            y: y
-        })
-       } 
-        n++
+       
+        self.time.delayedCall(80 * index, () => {
+            console.log("x, y, action", x, y, action)
+            e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
+            e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
+            e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
+            e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
+
+            self.SocketServer.send({
+                event: "PLAYER_MOVED",
+                action: action,
+                x: x,
+                y: y
+            })
+        }); 
+       
       })
-      /**  间补动画移动人物    */
+      /**  间补动画移动人物     
       this.scene.scene.tweens.timeline({
           tweens: tweens,
           onStart: (timeline, param) => { 
             //a.forEach((e) =>{ self.SocketServer.send(e) })
           },
           onUpdate: (timeline, param) => { 
-            b.forEach((e) =>{ self.SocketServer.send(e) })
+            //b.forEach((e) =>{ self.SocketServer.send(e) })
           },
           onComplete: (timeline, param) => { 
             //c.forEach((e) =>{ self.SocketServer.send(e) })
           }
       }); 
+     */
     }
     findpathUpdate() {
       var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main) 

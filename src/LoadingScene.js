@@ -1,4 +1,5 @@
 import kingPNG from "./assets/sprites/king.png";
+import dudePNG from "./assets/sprites/dude.png";
 
 // 玩家
 import kingAtlasPNG from "./assets/spritesheets/a-king_withmask.png";
@@ -53,17 +54,31 @@ export class LoadingScene extends Phaser.Scene {
         // 登录 
         this.load.html('nameform', "https://labs.phaser.io/assets/text/loginform.html");
 
+        this.load.spritesheet('dude', dudePNG, { frameWidth: 32, frameHeight: 48 });
+
     }
 
-    create() {
-        this.createLogin() 
+    create() { 
+        //this.createLogin()
+        
+         // 登录 ajax 
+         let net = new SocketServer()
+         if (!net.login("a", "b")) {
+              return
+         }
+         this.joinWorld(net)
+       
     }
+    
+
     joinWorld(net){
         this.scene.start("JuniorScene", {name: "GrassJson",SocketServer:net })
         this.scene.start("UIScene", {name: "GrassJson",SocketServer:net})
     }
     createLogin() { 
         var self = this
+
+        
         var text = this.add.text(10, 10, 'Please login to play', { color: 'white', fontFamily: 'Arial', fontSize: '32px '});
         var element = this.add.dom(400, 600).createFromCache('nameform');
  
