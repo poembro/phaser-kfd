@@ -9,20 +9,42 @@ let domainWs = "ws://127.0.0.1:14020"
 //let domainWs = "ws://47.111.69.116:8080"
 
 class SocketServer {
+    // 基础属性
     memberId = 0
-    key = ""
+    nickname = ""
+    token = ""
+
     ws = null
     fn = null
 
-    item = null
+    
+    // 用户属性
+    memberinfo = {}
+    // 仓库
+    memberinfo = {}
+
+    // 
     //heartbeatInterval  = null
     constructor() {
+    }
+
+    login (nickname, password) {
         let resp  = this.ajax({
             type:"GET",
             url:domainHttp + "/v2/ws/comet/GetToken",
-            data:{id: this.getQuery("id") ? this.getQuery("id") :this.getRnd(1,100000)}
+            data:{
+                id: this.getQuery("id") ? this.getQuery("id") :this.getRnd(1,100000),
+                nickname : nickname,
+                password: password
+            }
         })
-        this.item = resp.data
+        if (!resp || !resp.data || !resp.data.token ) {
+            return false
+        }
+        this.token = resp.data.token 
+        this.nickname = resp.data.nickname
+        this.memberId = resp.data.id
+        return true
     }
 
     getQuery (name){
@@ -35,11 +57,8 @@ class SocketServer {
         this.fn = fn  
         let self = this
         
-        let item = this.item
-        self.key = item.nickname
-        self.memberId = item.id
     
-        let ws = new WebSocket( domainWs +'/v2/ws?token=' +  item.token);
+        let ws = new WebSocket( domainWs +'/v2/ws?token=' +  self.token);
         self.ws = ws
         ws.binaryType = 'arraybuffer';
         ws.onopen         = () => {

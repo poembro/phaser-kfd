@@ -21,8 +21,8 @@ export class JuniorScene extends Phaser.Scene {
     }
 
     preload() {
-       // UI那边 调用scene.restart(game-scene) 本类所有东西会重新执行
-            // 蜥蜴空闲
+        // UI那边 调用scene.restart(game-scene) 本类所有东西会重新执行
+        // 蜥蜴空闲
         this.anims.create({key: 'lizard-idle',
             frames: this.anims.generateFrameNames('lizard', {start: 0, end: 3, prefix: 'lizard_m_idle_anim_f', suffix: '.png' }),
             repeat: -1, frameRate: 10
@@ -32,12 +32,11 @@ export class JuniorScene extends Phaser.Scene {
         this.anims.create({key: 'lizard-run',
             frames: this.anims.generateFrameNames('lizard', {start: 0, end: 3, prefix: 'lizard_m_run_anim_f', suffix: '.png' }),
             repeat: -1, frameRate: 10
-        }) 
-
+        })
     }
     
-    create(props) {
-
+    create(props) { 
+        this.SocketServer = props.SocketServer
         // 先创建地图 props.name = Level-1 / Level-2
         this.initMap(props.name)
         this.initChests()
@@ -56,8 +55,8 @@ export class JuniorScene extends Phaser.Scene {
     // ltime 当前时间。一个高分辨率定时器值，如果它来自请求动画帧，或日期。现在如果使用SetTimeout。
     // delta 从上一帧开始的时间单位是毫秒。这是一个基于FPS速率的平滑和上限值
     update(ltime, delta) {
-        this.findpathUpdate()
-       this.player.update(this.SocketServer)
+       this.findpathUpdate()
+       this.player.update()
     }
  
 
@@ -83,9 +82,8 @@ export class JuniorScene extends Phaser.Scene {
     
     initPlayer(levelName){
         var self = this
-        let net = new SocketServer()
-        this.SocketServer = net
- 
+  
+        let net = this.SocketServer
         net.conn((data) => {
             if (data.event === 'PLAYER_JOINED') {
                 console.log('PLAYER_JOINED'); 
@@ -127,16 +125,16 @@ export class JuniorScene extends Phaser.Scene {
                     onlinePlayers[data.memberId].getDamage(data.hp)
                 }
                 if (onlinePlayers[data.memberId] && data.typ === "attack_action") {
-                    onlinePlayers[data.memberId].attackHandle(data.hp)
+                    onlinePlayers[data.memberId].attackHandle()
                 }
 
                 if (onlinePlayers[data.memberId] && data.typ === "chests_hp") {
-                    onlinePlayers[data.memberId].addHP(null)
+                    onlinePlayers[data.memberId].addHP(false)
                 }
             }
         })
 
-        this.player = new Player(this, this.wallsLayer, 100, 100, this.SocketServer.memberId || "我" ); // 创建玩家(自己)
+        this.player = new Player(this, this.wallsLayer, 100, 100, this.SocketServer); // 创建玩家(自己)
         if (!onlinePlayers[this.SocketServer.memberId]) {
             onlinePlayers[this.SocketServer.memberId]  = this.player
         } 
@@ -157,7 +155,7 @@ export class JuniorScene extends Phaser.Scene {
             // 检查玩家是否与任何宝箱重叠
             this.physics.add.overlap(player, item, (obj1, obj2) => {
                 // this.game.events.emit(EVENTS_NAME.chestLoot, {memberId: obj1.id}) // 加 通关条件 
-                obj1.addHP(net) // 加血
+                obj1.addHP(true) // 加血
                 obj2.destroy()
                 //console.log("玩家  ",obj1.id, " 捡 到宝贝 ", obj2)
             })
@@ -244,6 +242,7 @@ export class JuniorScene extends Phaser.Scene {
     }
 
     moveCharacter (path){
+        let self = this
       // 设置一个补间列表，每个瓷砖走一个，将由时间轴链接
       var tweens = [];
       for(var i = 0; i < path.length-1; i++){
@@ -251,11 +250,16 @@ export class JuniorScene extends Phaser.Scene {
           var ey = path[i+1].y;
           tweens.push({
               targets: this.player,
-              x: {value: ex*this.map.tileWidth, duration: 100},
-              y: {value: ey*this.map.tileHeight, duration: 100}
+              x: {value: ex*this.map.tileWidth, duration: 500},
+              y: {value: ey*this.map.tileHeight, duration: 500}
           });
       }
 
+      let a = []
+      let b = []
+      let c = []
+      let n = 0
+      let total = tweens.length
       tweens.forEach((e) =>{
         // 计算朝向
         let action = 0
@@ -276,17 +280,43 @@ export class JuniorScene extends Phaser.Scene {
             },
             loop: false,
         });
-        */  
-        this.SocketServer.send({
+        */
+       if (n==0) {
+        a.push({
             event: "PLAYER_MOVED",
             action: action,
             x: x,
             y: y
         })
+       }else if (n == total - 1) {
+        c.push({
+            event: "PLAYER_MOVED",
+            action: action,
+            x: x,
+            y: y
+        })
+       }else{
+           b.push({
+            event: "PLAYER_MOVED",
+            action: action,
+            x: x,
+            y: y
+        })
+       } 
+        n++
       })
       /**  间补动画移动人物    */
       this.scene.scene.tweens.timeline({
-          tweens: tweens
+          tweens: tweens,
+          onStart: (timeline, param) => { 
+            //a.forEach((e) =>{ self.SocketServer.send(e) })
+          },
+          onUpdate: (timeline, param) => { 
+            b.forEach((e) =>{ self.SocketServer.send(e) })
+          },
+          onComplete: (timeline, param) => { 
+            //c.forEach((e) =>{ self.SocketServer.send(e) })
+          }
       }); 
     }
     findpathUpdate() {

@@ -61,7 +61,7 @@ export default class Enemy extends Physics.Arcade.Sprite {
            //console.log("------fn->",fn,"----a-", a, "----b",b," 结果",Phaser.Math.Distance.BetweenPoints(a,b)  )
            
             if ( Phaser.Math.Distance.BetweenPoints(a,b) < this.AGRESSOR_RADIUS) {
-                //this.getDamage(1);
+                this.getDamage(1);
                 // 上报血量减少
                 if (fn) fn(this.id, 1)
             }

@@ -40,6 +40,7 @@ const Config = {
     antialiasGL: false,
     pixelArt: true,
   },
+  parent: 'phaser-example',
   callbacks: {
     postBoot: () => {
       sizeChanged();
@@ -49,6 +50,9 @@ const Config = {
   autoFocus: true,
   audio: {
     disableWebAudio: false,
+  },
+  dom: {
+    createContainer: true
   },
   scene: [ LoadingScene, BasicsScene, JuniorScene, UIScene],
   winScore: 100,

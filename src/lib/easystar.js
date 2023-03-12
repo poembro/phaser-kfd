@@ -141,7 +141,7 @@ export var EasyStar =
 	        for (var y = 0; y < collisionGrid.length; y++) {
 	            for (var x = 0; x < collisionGrid[0].length; x++) {
 	                if (!costMap[collisionGrid[y][x]]) {
-						console.log("costMap : " ,   costMap)
+						//console.log("costMap : " ,   costMap)
 
 	                    costMap[collisionGrid[y][x]] = 1;
 	                }

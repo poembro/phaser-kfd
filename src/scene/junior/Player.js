@@ -16,7 +16,9 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     pointerupHandler= null // 点击事件处理函数
     autoIncrId = 0
     cursors= null
-    constructor(scene, worldLayer, x, y, uuid) {
+
+    SocketServer = null
+    constructor(scene, worldLayer, x, y, net) {
         super(scene, x, y, "king");
         
         scene.add.existing(this);
@@ -36,10 +38,10 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setSize(30, 30)
         this.body.setOffset(8, 0)
 
-        
-        this.id = uuid
+        this.SocketServer = net
+          this.id = net.memberId
         this.hpValue = scene.add.text((this.x) -20 + 40,  (this.y - 40), this.hp +"");
-        this.playerNickname = scene.add.text(this.x -20, (this.y - 40), uuid+'');
+        this.playerNickname = scene.add.text(this.x -20, (this.y - 40), net.nickname);
 
         scene.anims.create({key: "run",  frames: scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }), frameRate: 8,}) // frameRate 帧率 8
         scene.anims.create({key: "attack",frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
@@ -116,7 +118,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
 
 
-    update(room) {
+    update() {
         this.autoIncrId++
         if (this.autoIncrId > 1000000000) {
             this.autoIncrId = 0
@@ -132,7 +134,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             !this.anims.isPlaying && this.anims.play("run", true);
 
             if (this.autoIncrId % 4 == 0) {
-                room.send({
+                this.SocketServer.send({
                     event: "PLAYER_MOVED",
                     action: 8,
                     x: this.x,
@@ -146,7 +148,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             !this.anims.isPlaying && this.anims.play("run", true);
 
             if (this.autoIncrId % 4 == 0) {
-                room.send({
+                this.SocketServer.send({
                     event: "PLAYER_MOVED",
                     action: 2,
                     x: this.x,
@@ -162,7 +164,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             !this.anims.isPlaying && this.anims.play("run", true) 
 
             if (this.autoIncrId % 4 == 0) {
-                room.send({
+                this.SocketServer.send({
                     event: "PLAYER_MOVED",
                     action: 4,
                     x: this.x,
@@ -178,7 +180,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             !this.anims.isPlaying && this.anims.play("run", true);
 
             if (this.autoIncrId % 4 == 0) {
-                room.send({
+                this.SocketServer.send({
                     event: "PLAYER_MOVED",
                     action: 6,
                     x: this.x,
@@ -189,36 +191,39 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     
         if (this.cursors.space.isDown) {
             if (this.autoIncrId % 4 == 0) { 
+                let net = this.SocketServer
                 this.scene.game.events.emit(EVENTS_NAME.attack, (id, hp) => {
-                    if (room) { // 自己攻击的上报至服务端
-                        room.send({
-                            event: "PLAYER_BROADCAST",
-                            typ:"attack_hp",
-                            memberId:id,
-                            hp: hp,
-                        })
-                    }
+                    // 自己攻击的上报 通知其他人界面的“我”加血了
+                    net.send({
+                        event: "PLAYER_BROADCAST",
+                        typ:"attack_hp",
+                        memberId:id,
+                        hp: hp,
+                    })
                 })
 
 
-                room.send({
+                this.SocketServer.send({
                     event: "PLAYER_BROADCAST",
                     typ:"attack_action",
+                    memberId: this.id,
                     x: this.x,
                     y: this.y
                 })
             }
  
-            this.attackHandle(room)
+            this.attackHandle()
         }
     }
     
-    addHP(room){
+    // isPush 加完血是否需要上报
+    // 服务端广播 某个人捡到宝物 这里就可以复用上，但是不用继续上报(广播)
+    addHP(isPush){  
         this.hp = this.hp + 10
         this.hpValue.setText(this.hp + "")
 
-        if (room) { // 自己攻击的上报至服务端
-            room.send({
+        if (isPush) { // 自己攻击的上报至服务端
+            this.SocketServer.send({
                 event: "PLAYER_BROADCAST",
                 typ:"chests_hp",
                 memberId:this.id,
