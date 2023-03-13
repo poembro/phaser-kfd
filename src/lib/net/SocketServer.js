@@ -2,11 +2,11 @@ import "google-protobuf"
 import pushPb from './push_pb'
 
 let onlinePlayers = [];
-let domainHttp = "http://127.0.0.1:14020"
-let domainWs = "ws://127.0.0.1:14020"
+//let domainHttp = "http://127.0.0.1:14020"
+//let domainWs = "ws://127.0.0.1:14020"
 
-//let domainHttp = "http://47.111.69.116:8080"
-//let domainWs = "ws://47.111.69.116:8080"
+let domainHttp = "http://47.111.69.116:8080"
+let domainWs = "ws://47.111.69.116:8080"
 
 class SocketServer {
     // 基础属性

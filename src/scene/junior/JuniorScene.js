@@ -51,7 +51,7 @@ export class JuniorScene extends Phaser.Scene {
 
         this.findpath()
     }
-  
+    
     // ltime 当前时间。一个高分辨率定时器值，如果它来自请求动画帧，或日期。现在如果使用SetTimeout。
     // delta 从上一帧开始的时间单位是毫秒。这是一个基于FPS速率的平滑和上限值
     update(ltime, delta) {
@@ -261,21 +261,11 @@ export class JuniorScene extends Phaser.Scene {
         let action = 0
         let x =  e.x.value
         let y =  e.y.value
+ 
+        self.time.delayedCall(50 * index, () => {
+            e.targets.addWalkingAnims({action: action, x: x, y: y})
 
-        // 判断朝向
-        if ( x > e.targets.x )  action = 6
-        if (! x > e.targets.x )  action = 4
-        if ( y > e.targets.y )  action = 2
-        if (! y > e.targets.y )  action = 8
-
-       
-        self.time.delayedCall(80 * index, () => {
-            console.log("x, y, action", x, y, action)
-            e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
-            e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
-            e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
-            e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
-
+            //采用物理引擎帧动画 
             self.SocketServer.send({
                 event: "PLAYER_MOVED",
                 action: action,

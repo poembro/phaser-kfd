@@ -58,16 +58,21 @@ export class LoadingScene extends Phaser.Scene {
 
     }
 
-    create() { 
-        //this.createLogin()
-        
+    create() {   
          // 登录 ajax 
          let net = new SocketServer()
          if (!net.login("a", "b")) {
               return
          }
          this.joinWorld(net)
-       
+
+
+
+        /** 调试阶段 跳过 登录验证
+         * 
+          this.createLogin()
+         * 
+        */
     }
     
 
@@ -75,10 +80,8 @@ export class LoadingScene extends Phaser.Scene {
         this.scene.start("JuniorScene", {name: "GrassJson",SocketServer:net })
         this.scene.start("UIScene", {name: "GrassJson",SocketServer:net})
     }
-    createLogin() { 
+    createLogin() {
         var self = this
-
-        
         var text = this.add.text(10, 10, 'Please login to play', { color: 'white', fontFamily: 'Arial', fontSize: '32px '});
         var element = this.add.dom(400, 600).createFromCache('nameform');
  

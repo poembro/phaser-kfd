@@ -13,7 +13,6 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
    
     speed = 100 
 
-    pointerupHandler= null // 点击事件处理函数
     autoIncrId = 0
     cursors= null
 
@@ -39,7 +38,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setOffset(8, 0)
 
         this.SocketServer = net
-          this.id = net.memberId
+        this.id = net.memberId
         this.hpValue = scene.add.text((this.x) -20 + 40,  (this.y - 40), this.hp +"");
         this.playerNickname = scene.add.text(this.x -20, (this.y - 40), net.nickname);
 
@@ -69,44 +68,21 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             repeat: -1
         });
 
-        
         this.initEvents()
-    }
-
-    initEvents() {
-        // 点击事件
-        this.pointerupHandler = (e) =>{
-            let action = 0
-            // 判断朝向
-            if ( e.x > this.x )  action = 6
-            if (! e.x > this.x )  action = 4
-            if ( e.y > this.y )  action = 2
-            if (! e.y > this.y )  action = 8
-            this.walkingHandle(e.x, e.y, action) 
-        }
-        //this.scene.input.on("pointerup", this.pointerupHandler, this); 
-      
-        // 键盘事件
+    } 
+    initEvents() {// 键盘事件
         this.cursors = this.scene.input.keyboard.createCursorKeys(); 
-    }
-
-    destroy() {
-        //this.scene.input.off("pointerup", this.pointerupHandler, this)
-    }
-
-
+    } 
     getHPValue() {
         return this.hp;
-    }
-
+    } 
     checkFlip() {
         if (this.body.velocity.x < 0) {
           this.scaleX = -1; //  缩放 水平翻转  sprite.scale.y = -1，就是垂直翻转
         } else {
           this.scaleX = 1;
         }
-    }
-
+    } 
     getDamage(value) { //得到伤害
         this.scene.tweens.add({
             targets: this,
@@ -130,29 +106,31 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
            // console.log("英雄 血量小于等于0 游戏结束")
             this.scene.game.events.emit(EVENTS_NAME.gameEnd, GameStatus.LOSE);
         }
-    }
-
+    } 
     showNickname(x,y) {
         this.playerNickname.x = x -20;
         this.playerNickname.y = (y - 40);
  
         this.hpValue.setPosition((x) -20 + 40, (y - 40));
         //this.hpValue.setOrigin(0.8, 0.5);
-    }
-
-
-
+    }  
+    walkingAnims = []
+    addWalkingAnims(data){
+        this.walkingAnims.push(data)
+    } 
     update() {
-        this.autoIncrId++
-        if (this.autoIncrId > 1000000000) {
-            this.autoIncrId = 0
-        }
-
-        //停止上一帧之前的任何运动
-        this.body.setVelocity(0);
-        // Show player nickname above player
-        this.showNickname(this.x, this.y);
-
+        //this.autoIncrId++
+        //if (this.autoIncrId > 1000000000) {
+        //    this.autoIncrId = 0
+        //}
+        this.autoIncrId = 4 
+        
+        this.body.setVelocity(0); 
+        this.showNickname(this.x, this.y) 
+        if (this.walkingAnims.length > 0) {
+            let tmpdata = this.walkingAnims.shift() 
+            this.netEventHandle(tmpdata)
+        } 
         if (this.cursors.up.isDown) {
             this.body.setVelocityY(-this.speed) 
             this.anims.play("turn", true);
@@ -163,9 +141,9 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                     action: 8,
                     x: this.x,
                     y: this.y
-                }) 
+                })
             }
-        } else if (this.cursors.down.isDown) {
+        }  else if  (this.cursors.down.isDown) {
             this.body.velocity.y = 110;
             this.anims.play("turn", true);
 
@@ -177,7 +155,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                     y: this.y
                 }) 
             }
-        }else if (this.cursors.left.isDown) {
+        } else if (this.cursors.left.isDown) {
             this.body.setVelocityX(-this.speed)
             this.anims.play("left", true) 
 
@@ -201,8 +179,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                     y: this.y
                 })
             }
-        }else if (this.cursors.space.isDown) {
-            if (this.autoIncrId % 4 == 0) { 
+        } else if (this.cursors.space.isDown) {
+            if (this.autoIncrId % 4 == 0) {
                 let net = this.SocketServer
                 this.scene.game.events.emit(EVENTS_NAME.attack, (id, hp) => {
                     // 自己攻击的上报 通知其他人界面的“我”加血了
@@ -212,8 +190,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
                         memberId:id,
                         hp: hp,
                     })
-                })
-
+                }) 
 
                 this.SocketServer.send({
                     event: "PLAYER_BROADCAST",
@@ -225,7 +202,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             }
  
             this.attackHandle()
-        } else {  
+        }else {  
             this.anims.play("turn"); 
         }
     }
@@ -251,38 +228,30 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.walkingHandle(data.x, data.y, data.action) 
     }
 
-    walkingHandle(x, y, action) {
-        //停止上一帧之前的任何运动
-        this.showNickname(x, y);
-        this.body.setVelocity(0) // 速度设置为0
-
-        // Player
-        switch (action) {
-            case 2:
-                this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
-                this.anims.play("turn");
-                console.log("------", 2)
-            case 4:
-                this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
-                //this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
-                 this.anims.play("left", true);
-                 console.log("----播放向左--", 4)
-                break;
-            case 6:
-                this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
-                this.anims.play("right", true);
-                console.log("----播放向右--", 6)
-                break
-            case 8:
-                this.body.setVelocityY(-this.speed) 
-                this.anims.play("turn");
-                console.log("----播放向上--", 8)
-            default:
-               this.anims.play("turn");
+    walkingHandle(x, y, action) { 
+        this.showNickname(x, y) 
+        if ( x < this.x) {
+            this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
+            this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
+            this.anims.play("left", true) 
+            console.log("----播放向左--")
+        } else if ( x > this.x ) {
+            this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
+            this.anims.play("right", true);
+            console.log("----播放向右--")
+        } else if (y > this.y) {
+            this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
+            this.anims.play("turn", true) 
+            console.log("----播放向下--")
+        } else if (y < this.y) {
+            this.body.setVelocityY(-this.speed) 
+            this.anims.play("turn", true);
+            console.log("----播放向上--")
         }
        
-       this.setPosition(x, y)  //通用设置位置
+        this.setPosition(x, y)  //通用设置位置 
        //this.anims.stop()
+       //this.body.setVelocity(0) // 速度设置为0 
     }
 
     attackHandle() { 

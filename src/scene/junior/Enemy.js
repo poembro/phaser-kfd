@@ -31,7 +31,7 @@ export default class Enemy extends Physics.Arcade.Sprite {
         scene.physics.add.existing(this); 
         //玩家不能离开这个世界
         this.body.setCollideWorldBounds(true);
-        scene.physics.add.collider(this, this.wallsLayer)
+        scene.physics.add.collider(this, worldLayer)
 
         this.body.setSize(30, 30)
         this.body.setOffset(8, 0)
