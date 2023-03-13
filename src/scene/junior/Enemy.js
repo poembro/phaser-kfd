@@ -195,6 +195,8 @@ export default class Enemy extends Physics.Arcade.Sprite {
         this.setPosition(x, y)  //通用设置位置 
        //this.anims.stop()
        this.body.setVelocity(0) // 速度设置为0 
+
+       this.anims.play("turn", true);
     }
 
      
