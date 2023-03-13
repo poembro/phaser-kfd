@@ -25,7 +25,7 @@ export default class Enemy extends Physics.Arcade.Sprite {
 
     cursors= null
     constructor(scene, worldLayer, x, y,target, uuid) {
-        super(scene, x, y, "king", target);
+        super(scene, x, y, "king");
        
         scene.add.existing(this);
         scene.physics.add.existing(this); 
@@ -44,8 +44,27 @@ export default class Enemy extends Physics.Arcade.Sprite {
         this.hpValue = scene.add.text((this.x) -20 + 60, (this.y - 40),this.hp +"")
         this.enemyNickname = this.scene.add.text(this.x -20,(this.y - 40),'怪物');
 
-        scene.anims.create({key: "run",  frames: scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }), frameRate: 8,}) // frameRate 帧率 8
         scene.anims.create({key: "attack",frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
+        
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'turn',
+            frames: [ { key: 'dude', frame: 4 } ],
+            frameRate: 20
+        });
+
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
 
         this.initEvents() 
     }
@@ -152,35 +171,30 @@ export default class Enemy extends Physics.Arcade.Sprite {
         this.walkingHandle(data.x, data.y, data.action) 
     }
 
-    walkingHandle(x, y, action) {
-        //停止上一帧之前的任何运动
-        this.body.setVelocity(0);  
-        this.showNickname(x, y);
-
-        // Player
-        switch (action) {
-            case 2 :
-                this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
-            case 4:
-                this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
-                this.checkFlip();
-                this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
-                break;
-            case 6:
-                this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
-                this.checkFlip();
-                this.body.setOffset(15, 15);
-                break
-            case 8:
-                this.body.setVelocityY(-this.speed) 
-            default:
-               this.body.setOffset(8, 0) 
+    walkingHandle(x, y, action) { 
+        this.showNickname(x, y) 
+        if ( x < this.x) {
+            this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
+            this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
+            this.anims.play("left", true) 
+            console.log("----播放向左--")
+        } else if ( x > this.x ) {
+            this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
+            this.anims.play("right", true);
+            console.log("----播放向右--")
+        } else if (y > this.y) {
+            this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
+            this.anims.play("turn", true) 
+            console.log("----播放向下--")
+        } else if (y < this.y) {
+            this.body.setVelocityY(-this.speed) 
+            this.anims.play("turn", true);
+            console.log("----播放向上--")
         }
        
-       !this.anims.isPlaying && this.anims.play("run", true);
-       this.setPosition(x, y)  //通用设置位置
-       this.anims.stop()
-       this.body.setVelocity(0) // 速度设置为0
+        this.setPosition(x, y)  //通用设置位置 
+       //this.anims.stop()
+       this.body.setVelocity(0) // 速度设置为0 
     }
 
      

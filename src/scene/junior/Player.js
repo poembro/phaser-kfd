@@ -251,7 +251,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
        
         this.setPosition(x, y)  //通用设置位置 
        //this.anims.stop()
-       //this.body.setVelocity(0) // 速度设置为0 
+       this.body.setVelocity(0) // 速度设置为0 
     }
 
     attackHandle() { 

@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import {BootScene} from "./scene/boot/BootScene"; 
+//import {BootScene} from "./scene/boot/BootScene"; 
 import {LoadingScene} from "./LoadingScene";
 
 //import {BasicsScene} from "./scene/basics/BasicsScene"; 
@@ -54,7 +54,7 @@ const Config = {
   dom: {
     createContainer: true
   },
-  scene: [BootScene, LoadingScene, JuniorScene, UIScene],
+  scene: [ LoadingScene, JuniorScene, UIScene],
   winScore: 100,
   plugins:{
     global: [{
