@@ -19,22 +19,14 @@ import GrassJSON from "./assets/tilemaps/json/Grass.json";
 
 
 import foodPNG from "./assets/spritesheets/food.png"
-
-
 import {SocketServer} from './lib/net/SocketServer';
 
-
- 
-
 export class LoadingScene extends Phaser.Scene {
-
- 
     constructor() {
         super("LoadingScene")
     }
 
     preload() {
-        //this.load.baseURL = "http://localhost:8080/assets/";
         this.load.image("king", kingPNG);
 
         // 加载图集：.atlas(key [, textureURL] [, atlasURL] [, textureXhrSettings] [, atlasXhrSettings])
@@ -77,9 +69,10 @@ export class LoadingScene extends Phaser.Scene {
     
 
     joinWorld(net){
-        this.scene.start("JuniorScene", {name: "GrassJson",SocketServer:net })
-        this.scene.start("UIScene", {name: "GrassJson",SocketServer:net})
+        this.scene.start("JuniorScene", {name: "GrassJson", SocketServer : net })
+        this.scene.start("UIScene", {name: "GrassJson", SocketServer : net})
     }
+
     createLogin() {
         var self = this
         var text = this.add.text(10, 10, 'Please login to play', { color: 'white', fontFamily: 'Arial', fontSize: '32px '});
@@ -88,56 +81,45 @@ export class LoadingScene extends Phaser.Scene {
         element.setPerspective(800);
         element.addListener('click');
         element.on('click', function (event) { 
-            if (event.target.name === 'loginButton')
-            {
-                var inputUsername = this.getChildByName('username');
-                var inputPassword = this.getChildByName('password');
-    
-                //  Have they entered anything?
-                if (inputUsername.value !== '' && inputPassword.value !== '')
-                {
-                    console.log("inputUsername.value -->", inputUsername.value , "     inputPassword.value --->", inputPassword.value )
+            if (event.target.name != 'loginButton') {
+                return
+            } 
+            var inputUsername = this.getChildByName('username');
+            var inputPassword = this.getChildByName('password');
 
-                    // 登录 ajax 
-                    let net = new SocketServer()
-                    if (!net.login(inputUsername.value, inputPassword.value)) {
-                        this.scene.tweens.add({ targets: text, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
-                        return
-                    }
+            //  Have they entered anything?
+            if (inputUsername.value !== '' && inputPassword.value !== '') {
+                console.log("inputUsername.value -->", inputUsername.value , "     inputPassword.value --->", inputPassword.value )
 
-                    //  Turn off the click events
-                    this.removeListener('click');
-    
-                    //  Tween the login form out
-                    this.scene.tweens.add({ targets: element.rotate3d, x: 1, w: 90, duration: 3000, ease: 'Power3' });
-    
-                    this.scene.tweens.add({ targets: element, scaleX: 2, scaleY: 2, y: 700, duration: 3000, ease: 'Power3',
-                        onComplete: function ()
-                        {
-                            element.setVisible(false);
-
-                            self.joinWorld(net)
-                        }
-                    });
-    
-                    //  Populate the text with whatever they typed in as the username!
-                   text.setText('Welcome ' + inputUsername.value);
-                   
-                }
-                else
-                {
-                    //  Flash the prompt
+                // 登录 ajax 
+                let net = new SocketServer()
+                if (!net.login(inputUsername.value, inputPassword.value)) {
                     this.scene.tweens.add({ targets: text, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
+                    return
                 }
+
+                //  Turn off the click events
+                this.removeListener('click');
+
+                //  Tween the login form out
+                this.scene.tweens.add({ targets: element.rotate3d, x: 1, w: 90, duration: 3000, ease: 'Power3' });
+
+                this.scene.tweens.add({ targets: element, scaleX: 2, scaleY: 2, y: 700, duration: 2000, ease: 'Power3',
+                    onComplete: () =>{
+                        element.setVisible(false); 
+                        self.joinWorld(net)
+                    }
+                });
+
+                //  Populate the text with whatever they typed in as the username!
+                text.setText('Welcome ' + inputUsername.value);
+                return
             }
+            //  Flash the prompt
+            this.scene.tweens.add({ targets: text, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
         });
 
-        this.tweens.add({
-            targets: element,
-            y: 300,
-            duration: 3000,
-            ease: 'Power3'
-        });
+        this.tweens.add({ targets: element, y: 300, duration: 3000, ease: 'Power3'});
     }
  
 }

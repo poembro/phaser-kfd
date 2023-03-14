@@ -19,16 +19,18 @@ function sizeChanged() {
   }
 }
 
+
 const Config = {
   type: Phaser.AUTO,
-  //parent: "app",
   backgroundColor: "#9bd4c3",
   width: 16*100,
   height: 16*100, 
-  scale: {
-    //mode: Scale.ScaleModes.NONE,
+  // https://juejin.cn/post/6844904110785822734
+  scale: {// 属性定义了Phaser的画布宽高，缩放。
+    //mode: Scale.ScaleModes.NONE,// mode属性定义缩放模式   Scale.ScaleModes.NONE 不缩放，canvas保持width，height定义的宽高。
     width: window.innerWidth,
     height: window.innerHeight,
+    //autoCenter: Scale.CENTER_BOTH, //水平方向以及垂直方向都局中   autoCenter定义了 canvas 元素相对于其父元素对齐方式 
   },
   physics: {
     default: "arcade",

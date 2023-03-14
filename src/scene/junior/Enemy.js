@@ -33,8 +33,8 @@ export default class Enemy extends Physics.Arcade.Sprite {
         this.body.setCollideWorldBounds(true);
         scene.physics.add.collider(this, worldLayer)
 
-        this.body.setSize(30, 30)
-        this.body.setOffset(8, 0)
+        //this.body.setSize(30, 30)
+        //this.body.setOffset(8, 0)
 
         this.target = target 
         //this.anims.play("lizard-idle");

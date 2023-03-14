@@ -1,7 +1,6 @@
 import  Player  from "./Player"; 
 import Enemy  from "./Enemy"; 
-//import { EVENTS_NAME } from "../../consts";
-import {onlinePlayers, SocketServer} from '../../lib/net/SocketServer';
+import {onlinePlayers} from '../../lib/net/SocketServer';
 import {EasyStar}  from "../../lib/easystar.js";
 
  
@@ -42,11 +41,18 @@ export class JuniorScene extends Phaser.Scene {
         this.initChests()
         this.initPlayer(props.name)
         
+        // 设置物理引擎检查碰撞范围
+        this.physics.world.setBounds(0, 0, this.wallsLayer.width * 16, this.wallsLayer.height * 16);
+
         // 设置相机
-        this.cameras.main.setBounds(0, 0, this.wallsLayer.width, this.wallsLayer.height); // 边界设置
+        this.cameras.main.setBackgroundColor('#9bd4c3')
+        // 边界设置  必须是所有瓦片总和的宽高 否则镜头不跟随
+        this.cameras.main.setBounds(0, 0, this.wallsLayer.width * 16, this.wallsLayer.height * 16); 
         this.cameras.main.setSize(this.game.scale.width, this.game.scale.height);
         this.cameras.main.startFollow(this.player); //开启相机跟随 玩家
-        //this.cameras.main.setZoom(2); 
+
+        //this.cameras.main.setViewport(0,0, this.game.scale.width, this.game.scale.height) //位置 和 相机镜头视野大小
+        //this.cameras.main.setZoom(2); // 2倍 相机缩放值
         //this.cameras.main.setOrigin(0, 0); //设置中心点为原点
 
         this.findpath()
@@ -62,9 +68,10 @@ export class JuniorScene extends Phaser.Scene {
 
     initMap(levelName) { 
         // 创建1个空地图
-        this.map = this.make.tilemap({key: levelName, tileWidth: 16, 
+        this.map = this.make.tilemap({
+            key: levelName, tileWidth: 16, 
             tileHeight: 16,width:100,height:100,
-            insertNull:false //如果你有一个大的稀疏分布的地图，并且贴图数据不需要改变，那么将这个值设置为true将有助于减少内存消耗。然而，如果你的地图很小，或者你需要动态更新贴图，那么就保留默认值。
+            insertNull:true //如果你有一个大的稀疏分布的地图，并且贴图数据不需要改变，那么将这个值设置为true将有助于减少内存消耗。然而，如果你的地图很小，或者你需要动态更新贴图，那么就保留默认值。
         });
         this.tileset = this.map.addTilesetImage("Grass", "Grass") //往空地图添加 草地 图片
         this.groundLayer = this.map.createLayer("Ground", this.tileset, 0, 0); // 地面图层
@@ -76,8 +83,7 @@ export class JuniorScene extends Phaser.Scene {
         // 参数4 瓷砖层使用。如果没有给定，则使用当前层。
         this.wallsLayer.setCollisionByProperty({ collides: true }, true, true,"Walls" ); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
     
-        // 设置物理引擎检查碰撞范围
-        this.physics.world.setBounds(0, 0, 16*100, 16*100);
+ 
     }
     
     initPlayer(levelName){
@@ -170,10 +176,40 @@ export class JuniorScene extends Phaser.Scene {
         });
     }
 
-    ////////////////////////////////////////////////////
-
-     // 自动寻路
-     findpath() {
+    ///////////////////////////自动寻路/////////////////////////
+    findpathUpdate() {
+        var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main) 
+        // 世界地图中的xy坐标 映射到  瓦片 xy
+        var pointerTileX = this.map.worldToTileX(worldPoint.x);
+        var pointerTileY = this.map.worldToTileY(worldPoint.y);
+        this.marker.x = this.map.tileToWorldX(pointerTileX);
+        this.marker.y = this.map.tileToWorldY(pointerTileY);
+        this.marker.setVisible(!this.checkCollision(pointerTileX,pointerTileY))
+    }
+  
+  
+    checkCollision(x,y){
+        let tile = this.map.getTileAt(x, y);
+        if (tile) { 
+            return tile.properties.collide == true;
+        } 
+        return false 
+    }
+  
+    getTileID(x,y){ 
+        // Game.map.getTileAt(x, y); 该方法有缓存  及其恶心
+        let tile = this.wallsLayer.getTileAt(x, y)  
+        if (!tile) {
+          tile = this.groundLayer.getTileAt(x, y)
+        } 
+        if (!tile) {
+          tile = {index : 0}
+        }
+        //console.log("---------","x",x, "y",y, tile)
+        return tile.index;
+    }
+    // 自动寻路
+    findpath() {
         this.input.on('pointerup',this.handleClick, this);
         this.marker = this.add.graphics();  // 点击的时候有个鼠标框框
         this.marker.lineStyle(3, 0xffffff, 1);
@@ -186,7 +222,6 @@ export class JuniorScene extends Phaser.Scene {
             for(var x = 0; x < this.map.width; x++){
                 // 在每个单元格中，我们存储tile的ID，它对应于它在map的tile集中的索引(Tiled中的"ID"字段)
                 let id = this.getTileID(x,y)
-                //console.log("this.getTileID(x,y) ---> ",  id )
                 col.push(id);
             }
             grid.push(col);
@@ -197,47 +232,39 @@ export class JuniorScene extends Phaser.Scene {
         
         var tileset = this.map.tilesets[0];
         var properties = tileset.tileProperties; // 全是标记为 碰撞标识的对象
-        var acceptableTiles = [];
+        var allowTiles = [];
         //console.log("----properties ", properties)
         //我们需要列出所有可以在上面行走的tile id。让我们遍历它们 并查看在Tiled中输入了哪些属性。
-        for(var i = tileset.firstgid-1; i < this.tileset.total; i++){ 
+        for(var i = tileset.firstgid-1; i < this.tileset.total; i++) {
             //   判断 碰撞标识的对象中 是否包含 i
             if(properties.hasOwnProperty(i)) {
                 // 如果没有显示任何属性，这意味着它是一个可行走的瓷砖
                 //console.log("----properties.collides--> index: ", i ,  properties[i])
             } else {
-                acceptableTiles.push(i+1);
+                allowTiles.push(i+1);
             }
- 
-            //if(!properties[i].collides) acceptableTiles.push(i+1);
-            // 如果有一个成本附加到瓷砖，让我们登记它
-            //if(properties[i].cost) this.finder.setTileCost(i+1, properties[i].cost); 
         }
-        //console.log(acceptableTiles)
-        this.finder.setAcceptableTiles(acceptableTiles);
+        
+        this.finder.setAcceptableTiles(allowTiles);
     }
 
     handleClick(pointer){
-      //console.log("--------> ",  pointer.x,"--------> ",  pointer.y)
       let self = this
       var x = this.cameras.main.scrollX + pointer.x;
       var y = this.cameras.main.scrollY + pointer.y;
-      //console.log("--------> ",  pointer.x,"--------> ",  pointer.y,"--------> ",  x,"--------> ",  y )
       var toX = Math.floor(x/16);
       var toY = Math.floor(y/16);
-    // console.log(this.player)
       var fromX = Math.floor(this.player.x/16);
       var fromY = Math.floor(this.player.y/16);
       //console.log('going from ('+fromX+','+fromY+') to ('+toX+','+toY+')');
 
       this.finder.findPath(fromX, fromY, toX, toY, function( path ) {
           if (path === null) {
-              console.warn("Path was not found.");
-          } else {
-              //console.log(path);
-              self.moveCharacter(path);
+            console.warn("Path was not found.");
+            return
           }
-      });
+          self.moveCharacter(path);
+      })
       this.finder.calculate(); // don't forget, otherwise nothing happens
     }
 
@@ -248,23 +275,28 @@ export class JuniorScene extends Phaser.Scene {
       for(var i = 0; i < path.length-1; i++){
           var ex = path[i+1].x;
           var ey = path[i+1].y;
+
+          let x = this.map.tileToWorldX(ex,self.cameras.main)
+          let y = this.map.tileToWorldY(ey,self.cameras.main)
+
           tweens.push({
-              targets: this.player,
-              x: {value: ex*this.map.tileWidth, duration: 200},
-              y: {value: ey*this.map.tileHeight, duration: 200}
+              targets: self.player,
+              x: {value: x, duration: 200},
+              y: {value: y, duration: 200}
           });
       }
-
-      
+ 
+      // 暂停动画
+      tweens.push({targets: this.player, x:{value: 0}, y:{value: 0}})
       tweens.forEach((e, index) =>{
         // 计算朝向 
         let x =  e.x.value
         let y =  e.y.value
  
-        self.time.delayedCall(50 * index, () => {
+        self.time.delayedCall(100 * index, () => {
+             //采用物理引擎帧动画 
             e.targets.addWalkingAnims({ x: x, y: y})
 
-            //采用物理引擎帧动画 
             self.SocketServer.send({
                 event: "PLAYER_MOVED", 
                 x: x,
@@ -272,10 +304,9 @@ export class JuniorScene extends Phaser.Scene {
             })
         })
       })
-      
-      let tt = tweens.pop()
-      this.player.addWalkingAnims({ x: parseInt(tt.x.value), y: tt.y.value - 1})
-      /**  间补动画移动人物     
+
+      //console.log("this.player.walkingStop() 暂停动画 ")
+      /**  间补动画移动人物 
       this.scene.scene.tweens.timeline({
           tweens: tweens,
           onStart: (timeline, param) => { 
@@ -290,36 +321,6 @@ export class JuniorScene extends Phaser.Scene {
       }); 
      */
     }
-    findpathUpdate() {
-      var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main) 
-      // 世界地图中的xy坐标 映射到  瓦片 xy
-      var pointerTileX = this.map.worldToTileX(worldPoint.x);
-      var pointerTileY = this.map.worldToTileY(worldPoint.y);
-      this.marker.x = this.map.tileToWorldX(pointerTileX);
-      this.marker.y = this.map.tileToWorldY(pointerTileY);
-      this.marker.setVisible(!this.checkCollision(pointerTileX,pointerTileY))
-    }
 
-
-    checkCollision(x,y){
-      let tile = this.map.getTileAt(x, y);
-      if (tile) { 
-        return tile.properties.collide == true;
-      } 
-      return false 
-    }
-
-    getTileID(x,y){ 
-      // Game.map.getTileAt(x, y); 该方法有缓存  及其恶心
-      let tile = this.wallsLayer.getTileAt(x, y)  
-      if (!tile) {
-        tile = this.groundLayer.getTileAt(x, y)
-      } 
-      if (!tile) {
-        tile = {index : 0}
-      }
-      //console.log("---------","x",x, "y",y, tile)
-      return tile.index;
-    }
  
 }

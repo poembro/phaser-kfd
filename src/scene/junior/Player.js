@@ -1,18 +1,12 @@
-//import {onlinePlayers, room} from './net/SocketServer';
 import { Physics } from "phaser";
-
 import { EVENTS_NAME, GameStatus } from "../../consts";
-
-// 这里这里继承的不是 游戏类对象 Phaser.GameObjects.Sprite {  
 
 export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser.Types.Input.Keyboard.CursorKeys
     id = ""
     hp = 100
     hpValue = null
     playerNickname = null 
-   
     speed = 100 
-
     autoIncrId = 0
     cursors= null
 
@@ -26,16 +20,11 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         //玩家不能离开这个世界
         this.body.setCollideWorldBounds(true);
  
-        
-        /**
-        如果游戏对象已经有一个主体，这个方法将简单地将它添加回模拟中。
-        可以指定主体是动态的还是静态的。动态物体可以通过速度和加速度运动。静态主体保持固定位置，因此能够使用优化的搜索树，使其成为静态元素(如关卡对象)的理想选择。你仍然可以与静态物体碰撞和重叠。
-        通常，你不会直接调用这个方法，而是使用街机物理工厂中可用的辅助方法，例如:  */
-        scene.physics.world.enableBody(this);
+         
         scene.physics.add.collider(this, worldLayer);
 
-        this.body.setSize(30, 30)
-        this.body.setOffset(8, 0)
+        //this.body.setSize(30, 30)
+        //this.body.setOffset(8, 0)
 
         this.SocketServer = net
         this.id = net.memberId
@@ -43,8 +32,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.playerNickname = scene.add.text(this.x -20, (this.y - 40), net.nickname);
 
 
-        
-        scene.anims.create({key: "attack",frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
+        scene.anims.create({key: "attack", frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
         
         //scene.anims.create({key: "run",  frames: scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }), frameRate: 8,}) // frameRate 帧率 8
 
@@ -69,7 +57,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         });
 
         this.initEvents()
-    } 
+    }
+
     initEvents() {// 键盘事件
         this.cursors = this.scene.input.keyboard.createCursorKeys(); 
           
@@ -77,9 +66,11 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.anims.play("turn", true);
         }, this)
     } 
+
     getHPValue() {
         return this.hp;
     }
+
     getDamage(value) { //得到伤害
         this.scene.tweens.add({
             targets: this,
@@ -104,13 +95,14 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.scene.game.events.emit(EVENTS_NAME.gameEnd, GameStatus.LOSE);
         }
     }
+
     showNickname(x,y) {
         this.playerNickname.x = x -20;
         this.playerNickname.y = (y - 40);
  
         this.hpValue.setPosition((x) -20 + 40, (y - 40));
         //this.hpValue.setOrigin(0.8, 0.5);
-    }  
+    }
     walkingAnims = []
     addWalkingAnims(data){
         this.walkingAnims.push(data)
@@ -190,7 +182,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     
     // isPush 加完血是否需要上报
     // 服务端广播 某个人捡到宝物 这里就可以复用上，但是不用继续上报(广播)
-    addHP(isPush){  
+    addHP(isPush){
         this.hp = this.hp + 10
         this.hpValue.setText(this.hp + "")
 
@@ -229,11 +221,18 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.anims.play("turn", true);
             console.log("----播放向上--")
         }
-       
-        this.setPosition(x, y)  //通用设置位置  
+
+        if (x == y && y == 0) { // 暂停回正动画
+            this.anims.play("turn", true);
+        } else { 
+            this.setPosition(x, y)  //通用设置位置  
+        }
         this.body.setVelocity(0) // 速度设置为0  
     }
-
+    walkingStop(){
+        this.anims.play("turn", true);
+        this.body.setVelocity(0) // 速度设置为0   
+    }
     attackHandle() { 
         this.anims.play("attack", true); // 攻击动画 
     }
