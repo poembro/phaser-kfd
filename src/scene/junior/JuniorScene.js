@@ -257,24 +257,24 @@ export class JuniorScene extends Phaser.Scene {
 
       
       tweens.forEach((e, index) =>{
-        // 计算朝向
-        let action = 0
+        // 计算朝向 
         let x =  e.x.value
         let y =  e.y.value
  
         self.time.delayedCall(50 * index, () => {
-            e.targets.addWalkingAnims({action: action, x: x, y: y})
+            e.targets.addWalkingAnims({ x: x, y: y})
 
             //采用物理引擎帧动画 
             self.SocketServer.send({
-                event: "PLAYER_MOVED",
-                action: action,
+                event: "PLAYER_MOVED", 
                 x: x,
                 y: y
             })
-        }); 
-       
+        })
       })
+      
+      let tt = tweens.pop()
+      this.player.addWalkingAnims({ x: parseInt(tt.x.value), y: tt.y.value - 1})
       /**  间补动画移动人物     
       this.scene.scene.tweens.timeline({
           tweens: tweens,

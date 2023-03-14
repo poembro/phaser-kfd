@@ -72,17 +72,14 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     } 
     initEvents() {// 键盘事件
         this.cursors = this.scene.input.keyboard.createCursorKeys(); 
+          
+        this.scene.input.keyboard.addListener("keyup", (e)=>{ // keydown 表示按下事件
+            this.anims.play("turn", true);
+        }, this)
     } 
     getHPValue() {
         return this.hp;
-    } 
-    checkFlip() {
-        if (this.body.velocity.x < 0) {
-          this.scaleX = -1; //  缩放 水平翻转  sprite.scale.y = -1，就是垂直翻转
-        } else {
-          this.scaleX = 1;
-        }
-    } 
+    }
     getDamage(value) { //得到伤害
         this.scene.tweens.add({
             targets: this,
@@ -106,7 +103,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
            // console.log("英雄 血量小于等于0 游戏结束")
             this.scene.game.events.emit(EVENTS_NAME.gameEnd, GameStatus.LOSE);
         }
-    } 
+    }
     showNickname(x,y) {
         this.playerNickname.x = x -20;
         this.playerNickname.y = (y - 40);
@@ -117,68 +114,44 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     walkingAnims = []
     addWalkingAnims(data){
         this.walkingAnims.push(data)
-    } 
+    }
     update() {
-        //this.autoIncrId++
-        //if (this.autoIncrId > 1000000000) {
-        //    this.autoIncrId = 0
-        //}
+        let isPush = false // 是否需要上报
+        this.autoIncrId++
+        if (this.autoIncrId > 1000000000) {
+            this.autoIncrId = 0
+        }
         this.autoIncrId = 4 
         
-        this.body.setVelocity(0); 
+
+        this.body.setVelocity(0); // 暂停运动速度
         this.showNickname(this.x, this.y) 
-        if (this.walkingAnims.length > 0) {
+
+        if (this.walkingAnims.length > 0) { // 播放寻路的地址
             let tmpdata = this.walkingAnims.shift() 
             this.netEventHandle(tmpdata)
-        } 
+            return
+        }
+
         if (this.cursors.up.isDown) {
             this.body.setVelocityY(-this.speed) 
             this.anims.play("turn", true);
 
-            if (this.autoIncrId % 4 == 0) {
-                this.SocketServer.send({
-                    event: "PLAYER_MOVED",
-                    action: 8,
-                    x: this.x,
-                    y: this.y
-                })
-            }
+            isPush = true
         }  else if  (this.cursors.down.isDown) {
             this.body.velocity.y = 110;
             this.anims.play("turn", true);
 
-            if (this.autoIncrId % 4 == 0) {
-                this.SocketServer.send({
-                    event: "PLAYER_MOVED",
-                    action: 2,
-                    x: this.x,
-                    y: this.y
-                }) 
-            }
+            isPush = true
         } else if (this.cursors.left.isDown) {
             this.body.setVelocityX(-this.speed)
             this.anims.play("left", true) 
 
-            if (this.autoIncrId % 4 == 0) {
-                this.SocketServer.send({
-                    event: "PLAYER_MOVED",
-                    action: 4,
-                    x: this.x,
-                    y: this.y
-                })
-            }
+            isPush = true
         } else if (this.cursors.right.isDown) {
             this.body.setVelocityX(this.speed)
-            this.anims.play("right", true);
-
-            if (this.autoIncrId % 4 == 0) {
-                this.SocketServer.send({
-                    event: "PLAYER_MOVED",
-                    action: 6,
-                    x: this.x,
-                    y: this.y
-                })
-            }
+            this.anims.play("right", true); 
+            isPush = true
         } else if (this.cursors.space.isDown) {
             if (this.autoIncrId % 4 == 0) {
                 let net = this.SocketServer
@@ -202,8 +175,16 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             }
  
             this.attackHandle()
-        }else {  
-            this.anims.play("turn"); 
+        }
+        
+        if (isPush){
+            if (this.autoIncrId % 4 == 0) {
+                this.SocketServer.send({
+                    event: "PLAYER_MOVED", 
+                    x: this.x,
+                    y: this.y
+                })
+            }
         }
     }
     
@@ -225,10 +206,10 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
 
     netEventHandle(data) {
-        this.walkingHandle(data.x, data.y, data.action) 
+        this.walkingHandle(data.x, data.y) 
     }
 
-    walkingHandle(x, y, action) { 
+    walkingHandle(x, y) {
         this.showNickname(x, y) 
         if ( x < this.x) {
             this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
@@ -249,9 +230,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             console.log("----播放向上--")
         }
        
-        this.setPosition(x, y)  //通用设置位置 
-       //this.anims.stop()
-       this.body.setVelocity(0) // 速度设置为0 
+        this.setPosition(x, y)  //通用设置位置  
+        this.body.setVelocity(0) // 速度设置为0  
     }
 
     attackHandle() { 
