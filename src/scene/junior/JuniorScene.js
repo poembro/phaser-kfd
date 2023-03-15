@@ -1,5 +1,6 @@
 import  Player  from "./Player"; 
-import Enemy  from "./Enemy"; 
+import Enemy  from "./Enemy";
+import Monster  from "./Monster";
 import {onlinePlayers} from '../../lib/net/SocketServer';
 import {EasyStar}  from "../../lib/easystar.js";
 
@@ -7,12 +8,12 @@ import {EasyStar}  from "../../lib/easystar.js";
 // 一个基础场景类，可以扩展为您自己使用。默认方法三个 init() preload() create()。
 export class JuniorScene extends Phaser.Scene {
     player = null
-     map = null
+    map = null
     tileset = null
     wallsLayer  = null
     groundLayer  = null
     chests  = null
-    enemies  = null 
+    monster  = null 
     SocketServer = null // 网络服务对象
  
     constructor() {
@@ -38,31 +39,39 @@ export class JuniorScene extends Phaser.Scene {
         this.SocketServer = props.SocketServer
         // 先创建地图 props.name = Level-1 / Level-2
         this.initMap(props.name)
-        this.initChests()
-        this.initPlayer(props.name)
-        
+        this.initChests() // 初始化宝贝
+        this.initPlayer(props.name) // 初始化玩家 和 敌人
+        //this.initMonster() // 初始化 怪物 它必须在初始化玩家之后执行
+       
+
+
         // 设置物理引擎检查碰撞范围
         this.physics.world.setBounds(0, 0, this.wallsLayer.width * 16, this.wallsLayer.height * 16);
 
         // 设置相机
-        this.cameras.main.setBackgroundColor('#9bd4c3')
-        // 边界设置  必须是所有瓦片总和的宽高 否则镜头不跟随
+        this.cameras.main.setBackgroundColor('#000000')
+        // 边界设置  是所有瓦片总和的宽高 否则镜头不跟随
         this.cameras.main.setBounds(0, 0, this.wallsLayer.width * 16, this.wallsLayer.height * 16); 
-        this.cameras.main.setSize(this.game.scale.width, this.game.scale.height);
+        //this.cameras.main.setSize(this.wallsLayer.width * 16, this.wallsLayer.height * 16);
         this.cameras.main.startFollow(this.player); //开启相机跟随 玩家
 
-        //this.cameras.main.setViewport(0,0, this.game.scale.width, this.game.scale.height) //位置 和 相机镜头视野大小
+        //this.cameras.main.setViewport(0,0, 600, 800) //位置 和 相机镜头视野大小
         //this.cameras.main.setZoom(2); // 2倍 相机缩放值
         //this.cameras.main.setOrigin(0, 0); //设置中心点为原点
-
         this.findpath()
     }
     
     // ltime 当前时间。一个高分辨率定时器值，如果它来自请求动画帧，或日期。现在如果使用SetTimeout。
     // delta 从上一帧开始的时间单位是毫秒。这是一个基于FPS速率的平滑和上限值
     update(ltime, delta) {
-       this.findpathUpdate()
+       //this.findpathUpdate()
        this.player.update()
+
+        /**
+        onlinePlayers.forEach((e, index) =>{
+          e.update()
+        })  
+        */
     }
  
 
@@ -82,13 +91,10 @@ export class JuniorScene extends Phaser.Scene {
         // 参数3 更新后是否重新计算贴图面。
         // 参数4 瓷砖层使用。如果没有给定，则使用当前层。
         this.wallsLayer.setCollisionByProperty({ collides: true }, true, true,"Walls" ); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
-    
- 
     }
     
-    initPlayer(levelName){
+    initPlayer(levelName) {
         var self = this
-  
         let net = this.SocketServer
         net.conn((data) => {
             if (data.event === 'PLAYER_JOINED') {
@@ -118,10 +124,11 @@ export class JuniorScene extends Phaser.Scene {
                     onlinePlayers[data.memberId] = otherPlayer
                     
                     self.bindPlayerByChests(otherPlayer)  
+                    //self.bindPlayerByMonster(otherPlayer) 
                 } else {
                     otherPlayer = onlinePlayers[data.memberId]
                 }
-                
+                //otherPlayer.addWalkingAnims({ x: data.x, y: data.y})
                 otherPlayer.netEventHandle(data) // 去处理网络数据
             }
 
@@ -145,7 +152,8 @@ export class JuniorScene extends Phaser.Scene {
             onlinePlayers[this.SocketServer.memberId]  = this.player
         } 
 
-        this.bindPlayerByChests(this.player, net) 
+        this.bindPlayerByChests(this.player) 
+        this.initEnemies(this.player)
     }
 
 
@@ -156,7 +164,7 @@ export class JuniorScene extends Phaser.Scene {
         this.chests = chestPoints.map((chestPoint) => self.physics.add.sprite(chestPoint.x ,chestPoint.y ,"food",Math.floor(Math.random() * 8)).setScale(0.5))
     }
 
-    bindPlayerByChests(player, net) { // 绑定玩家与宝箱的物理碰撞关系
+    bindPlayerByChests(player) { // 绑定玩家与宝箱的物理碰撞关系
         this.chests.forEach((item) => {
             // 检查玩家是否与任何宝箱重叠
             this.physics.add.overlap(player, item, (obj1, obj2) => {
@@ -176,26 +184,69 @@ export class JuniorScene extends Phaser.Scene {
         });
     }
 
-    ///////////////////////////自动寻路/////////////////////////
-    findpathUpdate() {
-        var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main) 
-        // 世界地图中的xy坐标 映射到  瓦片 xy
-        var pointerTileX = this.map.worldToTileX(worldPoint.x);
-        var pointerTileY = this.map.worldToTileY(worldPoint.y);
-        this.marker.x = this.map.tileToWorldX(pointerTileX);
-        this.marker.y = this.map.tileToWorldY(pointerTileY);
-        this.marker.setVisible(!this.checkCollision(pointerTileX,pointerTileY))
+
+    initEnemies(player) {
+        let self = this 
+        const enemiesPoints = this.map.filterObjects("Enemies",  (obj) => obj.name === "EnemyPoint");
+        let items = enemiesPoints.map((enemyPoint, id) => new Monster(this, enemyPoint.x, enemyPoint.y, self.player, id) )
+    
+        this.physics.add.collider(items, this.wallsLayer);
+        /** 
+        this.physics.add.collider(items, items);
+        this.physics.add.collider(self.player, items, function(obj1, obj2){
+            obj1.getDamage(1)
+            obj2.getDamage(1) 
+            console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
+        },
+        undefined,
+        this);
+        */
+        items.forEach((item) => {
+            // 检查玩家是否与任何宝箱重叠
+            this.physics.add.overlap(player, item, (obj1, obj2) => {
+                // this.game.events.emit(EVENTS_NAME.chestLoot, {memberId: obj1.id}) // 加 通关条件 
+                obj1.getDamage(1)
+                obj2.getDamage(1) 
+                console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
+            })
+        })
+
     }
-  
-  
-    checkCollision(x,y){
-        let tile = this.map.getTileAt(x, y);
-        if (tile) { 
-            return tile.properties.collide == true;
-        } 
-        return false 
+   
+    initMonster() {
+        let self = this 
+        // 地图里面找所有宝箱的点
+        const monsterPoints = this.map.filterObjects("Enemies", (obj) => obj.name === "EnemyPoint");
+        this.monster = monsterPoints.map((item, id) =>  new Monster(self, item.x, item.y, id));
     }
-  
+
+    bindPlayerByMonster(player) {// 绑定玩家与怪物的物理碰撞关系
+        if (this.monster.length <= 0) {
+            this.initMonster() 
+        }
+        this.physics.add.collider(this.monster, this.wallsLayer);
+        //this.physics.add.collider(this.monster, this.monster);
+       /**
+        this.physics.add.collider(this.player, this.monster, (obj1, obj2) => {
+                obj1.getDamage(1)
+                obj2.getDamage(1)
+                console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
+            }, undefined, this);
+        */
+        this.monster.forEach((item) => {
+            // 只要有玩家与怪物重叠 
+            this.physics.add.overlap(player, item, (obj1, obj2) => {
+                obj1.setTarget(player) // 将玩家设置为怪物攻击目录
+                obj1.getDamage(1) // 加血
+                obj2.getDamage(1)
+                console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
+            })
+        })
+         
+    }
+
+
+    ///////////////////////////自动寻路///////////////////////// 
     getTileID(x,y){ 
         // Game.map.getTileAt(x, y); 该方法有缓存  及其恶心
         let tile = this.wallsLayer.getTileAt(x, y)  
@@ -211,9 +262,12 @@ export class JuniorScene extends Phaser.Scene {
     // 自动寻路
     findpath() {
         this.input.on('pointerup',this.handleClick, this);
-        this.marker = this.add.graphics();  // 点击的时候有个鼠标框框
+ 
+        // 在点击的位置画个框 
+        this.marker = this.add.graphics();
         this.marker.lineStyle(3, 0xffffff, 1);
         this.marker.strokeRect(0, 0, this.map.tileWidth, this.map.tileHeight);
+
         this.finder = new EasyStar.js();
 
         var grid = [];
@@ -248,8 +302,36 @@ export class JuniorScene extends Phaser.Scene {
         this.finder.setAcceptableTiles(allowTiles);
     }
 
+      
+    checkCollision(x,y){
+        let tile = this.map.getTileAt(x, y);
+        if (tile) { 
+            return tile.properties.collide == true;
+        } 
+        return false 
+    }
+  
+    findpathUpdate() {
+        var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main) 
+        // 世界地图中的xy坐标 映射到  瓦片 xy
+        var pointerTileX = this.map.worldToTileX(worldPoint.x); //x
+        var pointerTileY = this.map.worldToTileY(worldPoint.y);
+        this.marker.x = this.map.tileToWorldX(pointerTileX);
+        this.marker.y = this.map.tileToWorldY(pointerTileY);
+        this.marker.setVisible(!this.checkCollision(pointerTileX, pointerTileY))
+    }
+
     handleClick(pointer){
       let self = this
+      //TODO  清空其他待播放的走路动画
+      self.player.walkingIndexAdd()
+      
+      // 2秒后将其隐藏 
+      self.findpathUpdate(pointer.x, pointer.y)
+      self.time.delayedCall(1000, (e) => {
+         this.marker.setVisible(false)
+      })
+
       var x = this.cameras.main.scrollX + pointer.x;
       var y = this.cameras.main.scrollY + pointer.y;
       var toX = Math.floor(x/16);
@@ -283,26 +365,25 @@ export class JuniorScene extends Phaser.Scene {
               targets: self.player,
               x: {value: x, duration: 200},
               y: {value: y, duration: 200}
-          });
+        });
       }
  
       // 暂停动画
-      tweens.push({targets: this.player, x:{value: 0}, y:{value: 0}})
+      tweens.push({targets: self.player, x:{value: 0}, y:{value: 0}})
+      let idx = self.player.walkingIndex
       tweens.forEach((e, index) =>{
         // 计算朝向 
-        let x =  e.x.value
-        let y =  e.y.value
- 
+        let x = e.x.value
+        let y = e.y.value 
         self.time.delayedCall(100 * index, () => {
-             //采用物理引擎帧动画 
-            e.targets.addWalkingAnims({ x: x, y: y})
-
+            e.targets.addWalkingAnims({ x: x, y: y, walkingIndex: idx})
+            //采用物理引擎帧动画 
             self.SocketServer.send({
                 event: "PLAYER_MOVED", 
                 x: x,
                 y: y
             })
-        })
+         })
       })
 
       //console.log("this.player.walkingStop() 暂停动画 ")

@@ -14,7 +14,7 @@ const randomDirection = (exclude) => {
 };
 
 
-export default class Enemy extends Physics.Arcade.Sprite {
+export default class Monster extends Physics.Arcade.Sprite {
     direction = Direction.RIGHT;
     moveEvent = Phaser.Time.TimerEvent
     target = null // 玩家
@@ -43,7 +43,6 @@ export default class Enemy extends Physics.Arcade.Sprite {
         this.hpValue = scene.add.text((this.x) -20 + 60, (this.y - 40), this.hp +"");
         this.enemyNickname = this.scene.add.text( this.x -20, (this.y - 40),  '怪物');
 
- 
         this.moveEvent = scene.time.addEvent({
             delay: 2000,
             callback: () => {
@@ -79,15 +78,12 @@ export default class Enemy extends Physics.Arcade.Sprite {
     setTarget(target) {
        this.target = target;
     }
-
-
     showPlayerNickname() {
         this.enemyNickname.x = this.x -20;
         this.enemyNickname.y = (this.y - 40);
  
         this.hpValue.setPosition((this.x) -20 + 60, (this.y - 40));
         //this.hpValue.setOrigin(0.8, 0.5);
-
     }
 
     preUpdate(t, dt) {
@@ -120,7 +116,6 @@ export default class Enemy extends Physics.Arcade.Sprite {
           }
         }
     }
-
 
     addHP(){
         this.hp = this.hp + 10;
@@ -155,14 +150,5 @@ export default class Enemy extends Physics.Arcade.Sprite {
             return
         }
         this.hpValue.setText(this.hp + "");
-
-    }
-
-    checkFlip() {
-        if (this.body.velocity.x < 0) {
-           this.scaleX = -1;
-        } else {
-           this.scaleX = 1;
-        }
     }
 }

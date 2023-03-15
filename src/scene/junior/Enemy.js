@@ -22,6 +22,8 @@ export default class Enemy extends Physics.Arcade.Sprite {
     hpValue = null
     enemyNickname = null
     speed = 50 
+    
+    autoIncrId = 0
 
     cursors= null
     constructor(scene, worldLayer, x, y,target, uuid) {
@@ -42,7 +44,7 @@ export default class Enemy extends Physics.Arcade.Sprite {
 
         this.id = uuid 
         this.hpValue = scene.add.text((this.x) -20 + 60, (this.y - 40),this.hp +"")
-        this.enemyNickname = this.scene.add.text(this.x -20,(this.y - 40),'怪物');
+        this.enemyNickname = this.scene.add.text(this.x -20,(this.y - 40),'敌人');
 
         scene.anims.create({key: "attack",frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
         
@@ -68,12 +70,35 @@ export default class Enemy extends Physics.Arcade.Sprite {
 
         this.initEvents() 
     }
+    showNickname() {
+        this.enemyNickname.x = this.x -20;
+        this.enemyNickname.y = (this.y - 40);
+ 
+        this.hpValue.setPosition((this.x) -20 + 60, (this.y - 40));
+        //this.hpValue.setOrigin(0.8, 0.5); 
+    }
+    walkingAnims = []
+    addWalkingAnims(data){
+        this.walkingAnims.push(data)
+    }
+    update() {
+        this.autoIncrId++
+        if (this.autoIncrId > 1000000000) {
+            this.autoIncrId = 0
+        }
 
-    initEvents() { 
+        this.body.setVelocity(0); // 暂停运动速度
+        this.showNickname(this.x, this.y) 
+
+        if (this.walkingAnims.length > 0 && this.autoIncrId % 4 == 0) { // 播放寻路的地址
+            let tmpdata = this.walkingAnims.shift() 
+            this.netEventHandle(tmpdata)
+            return
+        }
+    }
+    initEvents() {
         // 键盘事件
         this.cursors = this.scene.input.keyboard.createCursorKeys(); 
-
-
         this.attackHandler = (fn) => {
             let a = { x: parseInt(this.x), y: parseInt(this.y) } 
             let b = { x: parseInt(this.target.x), y: parseInt(this.target.y) }
@@ -85,46 +110,26 @@ export default class Enemy extends Physics.Arcade.Sprite {
                 if (fn) fn(this.id, 1)
             }
         }
-        
         // EVENTS 监听事件     // 处理被宰之后的动作
         this.scene.game.events.on(EVENTS_NAME.attack, this.attackHandler, this);
- 
-        
         // 为给定事件添加侦听器。
         this.on("destroy", () => {
             console.log("    这里被调用了this.on(destroy, () => {")
             this.scene.game.events.removeListener(EVENTS_NAME.attack, this.attackHandler)
         }, this)
     }
-
- 
     destroy() {
         super.destroy(); 
-
         this.enemyNickname.destroy(); 
         this.hpValue.destroy();
     }
-
-   
     setTarget(target) {
        this.target = target;
     }
-
-
-    showNickname() {
-        this.enemyNickname.x = this.x -20;
-        this.enemyNickname.y = (this.y - 40);
- 
-        this.hpValue.setPosition((this.x) -20 + 60, (this.y - 40));
-        //this.hpValue.setOrigin(0.8, 0.5); 
-    }
- 
-
     addHP(){
         this.hp = this.hp + 10;
         this.hpValue.setText(this.hp +""); 
     }
-    
     getHPValue() {
         return this.hp;
     }
@@ -155,14 +160,9 @@ export default class Enemy extends Physics.Arcade.Sprite {
         }
         this.hpValue.setText(this.hp + "")
     }
-
-
- 
-    
     netEventHandle(data) {
         this.walkingHandle(data.x, data.y) 
     }
-
     walkingHandle(x, y) {
         this.showNickname(x, y) 
         if ( x < this.x) {
@@ -187,7 +187,6 @@ export default class Enemy extends Physics.Arcade.Sprite {
         this.setPosition(x, y)  //通用设置位置  
         this.body.setVelocity(0) // 速度设置为0  
     }
-
     attackHandle() { 
         this.anims.play("attack", true); // 攻击动画 
     }

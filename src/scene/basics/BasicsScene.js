@@ -32,9 +32,7 @@ export class BasicsScene extends Phaser.Scene {
           frames: this.anims.generateFrameNames('lizard', { start: 0, end: 3, prefix: 'lizard_m_run_anim_f', suffix: '.png' }),
           repeat: -1,
           frameRate: 10
-      })
-
-    
+      }) 
     }
 
     create(props) {
@@ -42,8 +40,6 @@ export class BasicsScene extends Phaser.Scene {
         this.initMap(props.name);
 
         this.player = new Player(this, this.wallsLayer, 0, 0, "我"); // 创建玩家(自己)
-     
-
         this.initChests() 
         this.initEnemies()
         //this.initCamera()
@@ -51,31 +47,26 @@ export class BasicsScene extends Phaser.Scene {
         this.physics.add.collider(this.player, this.wallsLayer); // 将玩家加入碰撞范围地图去 
         
         // 设置相机
-        this.cameras.main.setBounds(0, 0, this.wallsLayer.width, this.wallsLayer.height); // 边界设置
-        this.cameras.main.setSize(this.game.scale.width, this.game.scale.height);
+        this.cameras.main.setBackgroundColor('#000000')
+        // 边界设置  是所有瓦片总和的宽高 否则镜头不跟随
+        this.cameras.main.setBounds(0, 0, this.wallsLayer.width * 16, this.wallsLayer.height * 16); 
         this.cameras.main.startFollow(this.player); //开启相机跟随 玩家
-        //this.cameras.main.setZoom(2); 
-        //this.cameras.main.setOrigin(0, 0); //设置中心点为原点
 
         this.findpath()
     }
 
   
-    update() { 
-      this.findpathUpdate()
-      //this.bg.setPosition();
+    update() {
       this.player.update();
     }
 
     initMap(levelName) {
-      //this.bg = this.add.tileSprite(0,0, window.innerWidth, window.innerHeight, "background")
-    
-      // 创建1个空地图
+      // 创建1个地图
       this.map = this.make.tilemap({key: levelName, tileWidth: 16, 
         tileHeight: 16,width:100,height:100,
         insertNull:false //如果你有一个大的稀疏分布的地图，并且贴图数据不需要改变，那么将这个值设置为true将有助于减少内存消耗。然而，如果你的地图很小，或者你需要动态更新贴图，那么就保留默认值。
       });
-       //console.log(this.map)
+
       this.tileset = this.map.addTilesetImage("Grass", "Grass") //往空地图添加 草地 图片
       this.groundLayer = this.map.createLayer("Ground", this.tileset, 0, 0); // 地面图层
       this.wallsLayer = this.map.createLayer("Walls", this.tileset, 0, 0);  // 墙 图层
@@ -153,9 +144,6 @@ export class BasicsScene extends Phaser.Scene {
      // 自动寻路
     findpath() {
         this.input.on('pointerup',this.handleClick, this);
-        this.marker = this.add.graphics();  // 点击的时候有个鼠标框框
-        this.marker.lineStyle(3, 0xffffff, 1);
-        this.marker.strokeRect(0, 0, this.map.tileWidth, this.map.tileHeight);
         this.finder = new EasyStar.js();
 
         var grid = [];
@@ -176,13 +164,11 @@ export class BasicsScene extends Phaser.Scene {
         var tileset = this.map.tilesets[0];
         var properties = tileset.tileProperties; // 全是标记为 碰撞标识的对象
         var acceptableTiles = [];
-        //console.log("----properties ", properties)
         //我们需要列出所有可以在上面行走的tile id。让我们遍历它们 并查看在Tiled中输入了哪些属性。
         for(var i = tileset.firstgid-1; i < this.tileset.total; i++){ 
             //   判断 碰撞标识的对象中 是否包含 i
             if(properties.hasOwnProperty(i)) {
                 // 如果没有显示任何属性，这意味着它是一个可行走的瓷砖
-                //console.log("----properties.collides--> index: ", i ,  properties[i])
             } else {
                 acceptableTiles.push(i+1);
             }
@@ -191,19 +177,15 @@ export class BasicsScene extends Phaser.Scene {
             // 如果有一个成本附加到瓷砖，让我们登记它
             //if(properties[i].cost) this.finder.setTileCost(i+1, properties[i].cost); 
         }
-        //console.log(acceptableTiles)
         this.finder.setAcceptableTiles(acceptableTiles);
     }
 
     handleClick(pointer){
-      //console.log("--------> ",  pointer.x,"--------> ",  pointer.y)
       let self = this
       var x = this.cameras.main.scrollX + pointer.x;
       var y = this.cameras.main.scrollY + pointer.y;
-      //console.log("--------> ",  pointer.x,"--------> ",  pointer.y,"--------> ",  x,"--------> ",  y )
       var toX = Math.floor(x/16);
       var toY = Math.floor(y/16);
-    // console.log(this.player)
       var fromX = Math.floor(this.player.x/16);
       var fromY = Math.floor(this.player.y/16);
       //console.log('going from ('+fromX+','+fromY+') to ('+toX+','+toY+')');
@@ -220,45 +202,37 @@ export class BasicsScene extends Phaser.Scene {
     }
 
     moveCharacter (path){
-      // 设置一个补间列表，每个瓷砖走一个，将由时间轴链接
-      var tweens = [];
-      for(var i = 0; i < path.length-1; i++){
-          var ex = path[i+1].x;
-          var ey = path[i+1].y;
-          tweens.push({
-              targets: this.player,
-              x: {value: ex*this.map.tileWidth, duration: 100},
-              y: {value: ey*this.map.tileHeight, duration: 100}
+        let self = this
+        // 设置一个补间列表，每个瓷砖走一个，将由时间轴链接
+        var tweens = [];
+        for(var i = 0; i < path.length-1; i++){
+            var ex = path[i+1].x;
+            var ey = path[i+1].y;
+  
+            let x = this.map.tileToWorldX(ex,self.cameras.main)
+            let y = this.map.tileToWorldY(ey,self.cameras.main)
+  
+            tweens.push({
+                targets: self.player,
+                x: {value: x, duration: 200},
+                y: {value: y, duration: 200}
           });
-      }
-
-      tweens.forEach((e) =>{
-        // 计算朝向
-        let action = 0
-        let x =  e.x.value
-        let y =  e.y.value
-
-        // 判断朝向
-        if ( x > e.targets.x )  action = 6
-        if (! x > e.targets.x )  action = 4
-        if ( y > e.targets.y )  action = 2
-        if (! y > e.targets.y )  action = 8
-
-        /**
-        this.time.addEvent({
-            delay: 2000,
-            callback: () => {
-                e.targets.walkingHandle(x, y, action)   //采用物理引擎帧动画
-            },
-            loop: false,
-        });
-        */   
-      })
-      /**  间补动画移动人物    */
-      this.scene.scene.tweens.timeline({
-          tweens: tweens
-      }); 
+        }
+   
+        // 暂停动画
+        tweens.push({targets: this.player, x:{value: 0}, y:{value: 0}})
+        tweens.forEach((e, index) =>{
+          // 计算朝向 
+          let x =  e.x.value
+          let y =  e.y.value
+   
+          self.time.delayedCall(100 * index, () => {
+               //采用物理引擎帧动画 
+              e.targets.addWalkingAnims({ x: x, y: y})
+          })
+        })
     }
+
     findpathUpdate() {
       var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main) 
       // 世界地图中的xy坐标 映射到  瓦片 xy

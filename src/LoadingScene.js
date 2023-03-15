@@ -47,7 +47,6 @@ export class LoadingScene extends Phaser.Scene {
         this.load.html('nameform', "https://labs.phaser.io/assets/text/loginform.html");
 
         this.load.spritesheet('dude', dudePNG, { frameWidth: 32, frameHeight: 48 });
-
     }
 
     create() {   

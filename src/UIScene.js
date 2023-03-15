@@ -44,8 +44,7 @@ export class UIScene extends Phaser.Scene {
   
         this.gameEndPhrase.setPosition(
           this.game.scale.width / 2 - this.gameEndPhrase.width / 2,
-          this.game.scale.height * 0.4
-        )
+          this.game.scale.height * 0.4)
   
         // 监听键盘 按下点击
         this.input.on("pointerdown", () => { 

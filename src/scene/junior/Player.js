@@ -11,6 +11,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     cursors= null
 
     SocketServer = null
+
+    walkingIndex = 0 // 走路标识 防止走了一半中途打断
     constructor(scene, worldLayer, x, y, net) {
         super(scene, x, y, "king");
         
@@ -34,8 +36,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
         scene.anims.create({key: "attack", frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
         
-        //scene.anims.create({key: "run",  frames: scene.anims.generateFrameNames("a-king", {prefix: "run-", end: 7, }), frameRate: 8,}) // frameRate 帧率 8
-
+ 
         this.anims.create({
             key: 'left',
             frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
@@ -65,11 +66,13 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.scene.input.keyboard.addListener("keyup", (e)=>{ // keydown 表示按下事件
             this.anims.play("turn", true);
         }, this)
-    } 
+    }
 
     getHPValue() {
         return this.hp;
     }
+
+ 
 
     getDamage(value) { //得到伤害
         this.scene.tweens.add({
@@ -107,20 +110,23 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     addWalkingAnims(data){
         this.walkingAnims.push(data)
     }
+    walkingIndexAdd() {
+        this.walkingAnims = []
+        return this.walkingIndex++;
+    }
     update() {
         let isPush = false // 是否需要上报
         this.autoIncrId++
         if (this.autoIncrId > 1000000000) {
             this.autoIncrId = 0
         }
-        this.autoIncrId = 4 
-        
 
         this.body.setVelocity(0); // 暂停运动速度
         this.showNickname(this.x, this.y) 
 
-        if (this.walkingAnims.length > 0) { // 播放寻路的地址
+        if (this.walkingAnims.length > 0 && this.autoIncrId % 4 == 0) { // 播放寻路的地址
             let tmpdata = this.walkingAnims.shift() 
+
             this.netEventHandle(tmpdata)
             return
         }
@@ -196,8 +202,10 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
     }
 
-
     netEventHandle(data) {
+        if (data.walkingIndex != this.walkingIndex) {
+            return
+        }
         this.walkingHandle(data.x, data.y) 
     }
 
