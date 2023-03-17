@@ -160,9 +160,11 @@ export default class Enemy extends Physics.Arcade.Sprite {
         }
         this.hpValue.setText(this.hp + "")
     }
-    netEventHandle(data) {
+
+    netEventHandle(data) { 
         this.walkingHandle(data.x, data.y) 
     }
+
     walkingHandle(x, y) {
         this.showNickname(x, y) 
         if ( x < this.x) {
@@ -183,9 +185,19 @@ export default class Enemy extends Physics.Arcade.Sprite {
             this.anims.play("turn", true);
             console.log("----播放向上--")
         }
-       
-        this.setPosition(x, y)  //通用设置位置  
+
+        if (x == y && y == 0) { // 暂停回正动画
+            this.anims.play("turn", true);
+        } else { 
+            this.setPosition(x, y)  //通用设置位置  
+        }
+
         this.body.setVelocity(0) // 速度设置为0  
+
+    }
+    walkingStop(){
+        this.anims.play("turn", true);
+        this.body.setVelocity(0) // 速度设置为0   
     }
     attackHandle() { 
         this.anims.play("attack", true); // 攻击动画 

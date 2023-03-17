@@ -62,9 +62,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
 
     initEvents() {// 键盘事件
         this.cursors = this.scene.input.keyboard.createCursorKeys(); 
-          
         this.scene.input.keyboard.addListener("keyup", (e)=>{ // keydown 表示按下事件
-            this.anims.play("turn", true);
+            this.walkingStop(true)
         }, this)
     }
 
@@ -231,15 +230,30 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         }
 
         if (x == y && y == 0) { // 暂停回正动画
-            this.anims.play("turn", true);
-        } else { 
-            this.setPosition(x, y)  //通用设置位置  
+            this.walkingStop(true)
+        } else {
+            this.setPosition(x, y)  //通用设置位置   
+            //采用物理引擎帧动画 
+            this.SocketServer.send({
+                event: "PLAYER_MOVED", 
+                x: x,
+                y: y
+            })
         }
         this.body.setVelocity(0) // 速度设置为0  
     }
-    walkingStop(){
+
+    walkingStop(isPush){
         this.anims.play("turn", true);
-        this.body.setVelocity(0) // 速度设置为0   
+        this.body.setVelocity(0) // 速度设置为0  
+        if (isPush) {
+            // 回正动画
+            this.SocketServer.send({
+                event: "PLAYER_BROADCAST", 
+                memberId:this.id, 
+                typ: "walking_stop",
+            })
+        }
     }
     attackHandle() { 
         this.anims.play("attack", true); // 攻击动画 

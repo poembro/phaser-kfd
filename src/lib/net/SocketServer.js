@@ -123,7 +123,7 @@ class SocketServer {
                       console.log("------",dst)
                       return
                     }
-                    console.log(dst)
+                    //console.log(dst)
                     self.fn({
                         event:'PLAYER_MOVED',
                         memberId:dst[0],

@@ -65,13 +65,14 @@ export class JuniorScene extends Phaser.Scene {
     // delta 从上一帧开始的时间单位是毫秒。这是一个基于FPS速率的平滑和上限值
     update(ltime, delta) {
        //this.findpathUpdate()
+          /**
        this.player.update()
 
-        /**
+      */
         onlinePlayers.forEach((e, index) =>{
           e.update()
         })  
-        */
+       
     }
  
 
@@ -144,6 +145,10 @@ export class JuniorScene extends Phaser.Scene {
                 if (onlinePlayers[data.memberId] && data.typ === "chests_hp") {
                     onlinePlayers[data.memberId].addHP(false)
                 }
+
+                if (onlinePlayers[data.memberId] && data.typ === "walking_stop") {
+                    onlinePlayers[data.memberId].walkingStop(false)
+                } 
             }
         })
 
@@ -377,12 +382,7 @@ export class JuniorScene extends Phaser.Scene {
         let y = e.y.value 
         self.time.delayedCall(100 * index, () => {
             e.targets.addWalkingAnims({ x: x, y: y, walkingIndex: idx})
-            //采用物理引擎帧动画 
-            self.SocketServer.send({
-                event: "PLAYER_MOVED", 
-                x: x,
-                y: y
-            })
+            
          })
       })
 
