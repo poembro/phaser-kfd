@@ -20,12 +20,10 @@ export default class Enemy extends Physics.Arcade.Sprite {
     id = 0 // 怪物编号
     hp = 100
     hpValue = null
-    enemyNickname = null
+    nickname = null
     speed = 50 
-    
-    autoIncrId = 0
-
-    cursors= null
+     
+ 
     constructor(scene, worldLayer, x, y,target, uuid) {
         super(scene, x, y, "king");
        
@@ -39,12 +37,10 @@ export default class Enemy extends Physics.Arcade.Sprite {
         //this.body.setOffset(8, 0)
 
         this.target = target 
-        //this.anims.play("lizard-idle");
-
-
+ 
         this.id = uuid 
-        this.hpValue = scene.add.text((this.x) -20 + 60, (this.y - 40),this.hp +"")
-        this.enemyNickname = this.scene.add.text(this.x -20,(this.y - 40),'敌人');
+        this.hpValue = scene.add.text((this.x) -20 ,  (this.y - 60), this.hp +"");
+        this.nickname = scene.add.text(this.x -20,(this.y - 40),'敌人');
 
         scene.anims.create({key: "attack",frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
         
@@ -70,40 +66,19 @@ export default class Enemy extends Physics.Arcade.Sprite {
 
         this.initEvents() 
     }
-    showNickname() {
-        this.enemyNickname.x = this.x -20;
-        this.enemyNickname.y = (this.y - 40);
+    showNickname(x,y) {
+        this.nickname.x = x -20;
+        this.nickname.y = y - 40;
  
-        this.hpValue.setPosition((this.x) -20 + 60, (this.y - 40));
+        this.hpValue.setPosition(x -20, (y - 60));
         //this.hpValue.setOrigin(0.8, 0.5); 
     }
-    walkingAnims = []
-    addWalkingAnims(data){
-        this.walkingAnims.push(data)
-    }
-    update() {
-        this.autoIncrId++
-        if (this.autoIncrId > 1000000000) {
-            this.autoIncrId = 0
-        }
-
-        this.body.setVelocity(0); // 暂停运动速度
-        this.showNickname(this.x, this.y) 
-
-        if (this.walkingAnims.length > 0 && this.autoIncrId % 4 == 0) { // 播放寻路的地址
-            let tmpdata = this.walkingAnims.shift() 
-            this.netEventHandle(tmpdata)
-            return
-        }
-    }
+  
     initEvents() {
         // 键盘事件
-        this.cursors = this.scene.input.keyboard.createCursorKeys(); 
         this.attackHandler = (fn) => {
             let a = { x: parseInt(this.x), y: parseInt(this.y) } 
             let b = { x: parseInt(this.target.x), y: parseInt(this.target.y) }
-           //console.log("------fn->",fn,"----a-", a, "----b",b," 结果",Phaser.Math.Distance.BetweenPoints(a,b)  )
-           
             if ( Phaser.Math.Distance.BetweenPoints(a,b) < this.AGRESSOR_RADIUS) {
                 this.getDamage(1);
                 // 上报血量减少
@@ -114,13 +89,13 @@ export default class Enemy extends Physics.Arcade.Sprite {
         this.scene.game.events.on(EVENTS_NAME.attack, this.attackHandler, this);
         // 为给定事件添加侦听器。
         this.on("destroy", () => {
-            console.log("    这里被调用了this.on(destroy, () => {")
+            // console.log("    这里被调用了this.on(destroy, () => {")
             this.scene.game.events.removeListener(EVENTS_NAME.attack, this.attackHandler)
         }, this)
     }
     destroy() {
         super.destroy(); 
-        this.enemyNickname.destroy(); 
+        this.nickname.destroy(); 
         this.hpValue.destroy();
     }
     setTarget(target) {
@@ -130,9 +105,7 @@ export default class Enemy extends Physics.Arcade.Sprite {
         this.hp = this.hp + 10;
         this.hpValue.setText(this.hp +""); 
     }
-    getHPValue() {
-        return this.hp;
-    }
+   
     getDamage(value) {//得到伤害
         this.scene.tweens.add({
             targets: this,
@@ -153,7 +126,7 @@ export default class Enemy extends Physics.Arcade.Sprite {
         });
 
         if (this.hp <= 0) {
-            console.log("敌人 血量小于等于0  应该停止怪物对象主体 然后消失 ") 
+            // console.log("敌人 血量小于等于0  应该停止怪物对象主体 然后消失 ") 
             this.disableBody(false, false)   // 停止怪物对象主体，但不消失
             this.destroy() 
             return
@@ -171,19 +144,19 @@ export default class Enemy extends Physics.Arcade.Sprite {
             this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
             this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
             this.anims.play("left", true) 
-            console.log("----播放向左--")
+            // console.log("----播放向左--")
         } else if ( x > this.x ) {
             this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
             this.anims.play("right", true);
-            console.log("----播放向右--")
+            // console.log("----播放向右--")
         } else if (y > this.y) {
             this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
             this.anims.play("turn", true) 
-            console.log("----播放向下--")
+            // console.log("----播放向下--")
         } else if (y < this.y) {
             this.body.setVelocityY(-this.speed) 
             this.anims.play("turn", true);
-            console.log("----播放向上--")
+            // console.log("----播放向上--")
         }
 
         if (x == y && y == 0) { // 暂停回正动画

@@ -54,10 +54,11 @@ class SocketServer {
     }
 
     conn(fn){
-        this.fn = fn  
+        this.fn = fn
+        if (this.ws && this.ws.readyState < 2) {
+            return
+        }
         let self = this
-        
-    
         let ws = new WebSocket( domainWs +'/v2/ws?token=' +  self.token);
         self.ws = ws
         ws.binaryType = 'arraybuffer';
@@ -141,6 +142,7 @@ class SocketServer {
 
     send(data) {
         var self = this
+        if (!this.ws) return
         // 获取周边
         if (data.event == "PLAYER_FIRST_POS")  {
             let pb = new pushPb.Proto()
@@ -208,13 +210,15 @@ class SocketServer {
 
         
     onclose(v) {
-        var self = this
         //if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+        /**  */
         let memberId = parseInt(this.memberId) 
         self.fn({
             event:'PLAYER_CLOSE',
             memberId:memberId
         })
+       
+        this.ws = null
     }
 
     heartbeat(){
@@ -263,7 +267,7 @@ class SocketServer {
         }
         
         xhr.send(params ? params : null);
-        console.log(xhr)
+        // console.log(xhr)
         if (xhr.status === 200) {
            return JSON.parse(xhr.response)
         }

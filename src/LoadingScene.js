@@ -88,7 +88,7 @@ export class LoadingScene extends Phaser.Scene {
 
             //  Have they entered anything?
             if (inputUsername.value !== '' && inputPassword.value !== '') {
-                console.log("inputUsername.value -->", inputUsername.value , "     inputPassword.value --->", inputPassword.value )
+                // console.log("inputUsername.value -->", inputUsername.value , "     inputPassword.value --->", inputPassword.value )
 
                 // 登录 ajax 
                 let net = new SocketServer()

@@ -5,7 +5,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     id = ""
     hp = 100
     hpValue = null
-    playerNickname = null 
+    nickname = null 
     speed = 100 
     autoIncrId = 0
     cursors= null
@@ -18,25 +18,21 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         
         scene.add.existing(this);
         scene.physics.add.existing(this); 
- 
-        //玩家不能离开这个世界
-        this.body.setCollideWorldBounds(true);
- 
-         
         scene.physics.add.collider(this, worldLayer);
+
+        //玩家不能离开这个世界
+        this.body.setCollideWorldBounds(true); 
 
         //this.body.setSize(30, 30)
         //this.body.setOffset(8, 0)
 
         this.SocketServer = net
         this.id = net.memberId
-        this.hpValue = scene.add.text((this.x) -20 + 40,  (this.y - 40), this.hp +"");
-        this.playerNickname = scene.add.text(this.x -20, (this.y - 40), net.nickname);
-
+        this.hpValue = scene.add.text((this.x) -20 ,  (this.y - 60), this.hp +"");
+        this.nickname = scene.add.text(this.x -20, (this.y - 40), net.nickname)
 
         scene.anims.create({key: "attack", frames: scene.anims.generateFrameNames("a-king", {prefix: "attack-",end: 2,}), frameRate: 8,}) 
         
- 
         this.anims.create({
             key: 'left',
             frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
@@ -66,13 +62,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.walkingStop(true)
         }, this)
     }
-
-    getHPValue() {
-        return this.hp;
-    }
-
  
-
     getDamage(value) { //得到伤害
         this.scene.tweens.add({
             targets: this,
@@ -99,15 +89,15 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     }
 
     showNickname(x,y) {
-        this.playerNickname.x = x -20;
-        this.playerNickname.y = (y - 40);
- 
-        this.hpValue.setPosition((x) -20 + 40, (y - 40));
+        this.nickname.x = x -20;
+        this.nickname.y = (y - 40);
+
+        this.hpValue.setPosition((x) -20, (y - 60));
         //this.hpValue.setOrigin(0.8, 0.5);
     }
     walkingAnims = []
     addWalkingAnims(data){
-        this.walkingAnims.push(data)
+        if (this.walkingIndex == data.walkingIndex) this.walkingAnims.push(data)
     }
     walkingIndexAdd() {
         this.walkingAnims = []
@@ -123,7 +113,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.body.setVelocity(0); // 暂停运动速度
         this.showNickname(this.x, this.y) 
 
-        if (this.walkingAnims.length > 0 && this.autoIncrId % 4 == 0) { // 播放寻路的地址
+        if (this.walkingAnims.length > 0 ) { // 播放寻路的地址
             let tmpdata = this.walkingAnims.shift() 
 
             this.netEventHandle(tmpdata)
@@ -214,19 +204,19 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
             this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
             this.anims.play("left", true) 
-            console.log("----播放向左--")
+            // console.log("----播放向左--")
         } else if ( x > this.x ) {
             this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
             this.anims.play("right", true);
-            console.log("----播放向右--")
+            // console.log("----播放向右--")
         } else if (y > this.y) {
             this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
             this.anims.play("turn", true) 
-            console.log("----播放向下--")
+            // console.log("----播放向下--")
         } else if (y < this.y) {
             this.body.setVelocityY(-this.speed) 
             this.anims.play("turn", true);
-            console.log("----播放向上--")
+            // console.log("----播放向上--")
         }
 
         if (x == y && y == 0) { // 暂停回正动画
@@ -258,5 +248,4 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
     attackHandle() { 
         this.anims.play("attack", true); // 攻击动画 
     }
- 
 }

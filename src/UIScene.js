@@ -6,7 +6,7 @@ import {onlinePlayers} from './lib/net/SocketServer';
  
 export class UIScene extends Phaser.Scene {
     score = null
-    levelName = ""
+    props = null
     gameEndPhrase = null
     scoreValue = 0
 
@@ -18,6 +18,7 @@ export class UIScene extends Phaser.Scene {
     } 
 
     create(props) { 
+        this.props = props
         this.levelName = props.name; //props.name = Level-1
         this.score = this.add.text(20,20,0).setFontSize(12).setOrigin(0.8, 0.5);
         this.initListeners();
@@ -29,7 +30,7 @@ export class UIScene extends Phaser.Scene {
 
     gameEndHandler (status) { // 游戏结束标识
         this.cameras.main.setBackgroundColor("rgba(0,0,0,0.6)");
-        this.game.scene.pause("BasicsScene") // 暂停游戏场景
+        this.game.scene.pause("JuniorScene") // 暂停游戏场景
    
         // 成功失败文字
         this.gameEndPhrase = this.add.text(
@@ -42,16 +43,14 @@ export class UIScene extends Phaser.Scene {
           .setAlign("center").setOrigin(0.8, 0.5)
           .setColor(status === GameStatus.LOSE ? "#ff0000" : "#ffffff");
   
-        this.gameEndPhrase.setPosition(
-          this.game.scale.width / 2 - this.gameEndPhrase.width / 2,
-          this.game.scale.height * 0.4)
+        this.gameEndPhrase.setPosition(this.game.scale.width / 2 - this.gameEndPhrase.width / 2, this.game.scale.height * 0.4)
   
         // 监听键盘 按下点击
         this.input.on("pointerdown", () => { 
           this.game.events.off(EVENTS_NAME.chestLoot, this.chestLootHandler);
           this.game.events.off(EVENTS_NAME.gameEnd, this.gameEndHandler);
-          this.scene.get("BasicsScene").scene.restart({ name: this.levelName });
-          this.scene.restart({ name: this.levelName });
+          this.scene.get("JuniorScene").scene.restart(this.props);
+          this.scene.restart(this.props);
         })
     }
 
@@ -62,7 +61,7 @@ export class UIScene extends Phaser.Scene {
         const currentIndex = LEVELS.findIndex((item) => item.name === self.levelName);
 
         if (LEVELS[currentIndex].score === this.scoreValue) {
-            console.log("-----opt.sessionId--被销毁--", opt,"------", onlinePlayers)
+            // console.log("-----opt.sessionId--被销毁--", opt,"------", onlinePlayers)
             let memberId = parseInt(opt.memberId)
             if (onlinePlayers[memberId]) delete onlinePlayers[memberId]
 
@@ -71,8 +70,8 @@ export class UIScene extends Phaser.Scene {
                 this.game.events.off(EVENTS_NAME.chestLoot, this.chestLootHandler)
                 this.game.events.off(EVENTS_NAME.gameEnd, this.gameEndHandler)
 
-                this.scene.get("BasicsScene").scene.restart({ name: nextLevel.name })
-                this.scene.restart({ name: nextLevel.name })
+                this.scene.get("JuniorScene").scene.restart(this.props)
+                this.scene.restart(this.props)
                 this.levelName = nextLevel.name
             } else {
                 if (this.scoreValue === 100) {

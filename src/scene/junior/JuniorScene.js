@@ -45,8 +45,8 @@ export class JuniorScene extends Phaser.Scene {
        
 
 
-        // 设置物理引擎检查碰撞范围
-        this.physics.world.setBounds(0, 0, this.wallsLayer.width * 16, this.wallsLayer.height * 16);
+        // 设置物理引擎检查碰撞范围 设置为横坐标瓦片总个数 
+        this.physics.world.setBounds(0, 0, this.wallsLayer.width , this.wallsLayer.height );
 
         // 设置相机
         this.cameras.main.setBackgroundColor('#000000')
@@ -64,14 +64,12 @@ export class JuniorScene extends Phaser.Scene {
     // ltime 当前时间。一个高分辨率定时器值，如果它来自请求动画帧，或日期。现在如果使用SetTimeout。
     // delta 从上一帧开始的时间单位是毫秒。这是一个基于FPS速率的平滑和上限值
     update(ltime, delta) {
-       //this.findpathUpdate()
-          /**
-       this.player.update()
-
-      */
+        //this.findpathUpdate()
+        this.player.update() 
+        /**
         onlinePlayers.forEach((e, index) =>{
           e.update()
-        })  
+        }) */  
        
     }
  
@@ -99,7 +97,7 @@ export class JuniorScene extends Phaser.Scene {
         let net = this.SocketServer
         net.conn((data) => {
             if (data.event === 'PLAYER_JOINED') {
-                console.log('PLAYER_JOINED'); 
+                // console.log('PLAYER_JOINED'); 
                 if (!onlinePlayers[data.memberId]) {
                     let otherPlayer = new Player(self, self.wallsLayer, 100, 100, data.memberId)
                     onlinePlayers[data.memberId] = otherPlayer
@@ -111,7 +109,7 @@ export class JuniorScene extends Phaser.Scene {
             }
 
             if (data.event === 'PLAYER_CLOSE') {
-                console.log('PLAYER_CLOSE'); 
+                // console.log('PLAYER_CLOSE'); 
                 if (onlinePlayers[data.memberId]) {
                     onlinePlayers[data.memberId].destroy();
                     delete onlinePlayers[data.memberId];
@@ -134,7 +132,7 @@ export class JuniorScene extends Phaser.Scene {
             }
 
             if (data.event === 'PLAYER_BROADCAST') {
-                console.log('PLAYER_BROADCAST'); 
+                // console.log('PLAYER_BROADCAST'); 
                 if (onlinePlayers[data.memberId] && data.typ === "attack_hp") {
                     onlinePlayers[data.memberId].getDamage(data.hp)
                 }
@@ -153,10 +151,12 @@ export class JuniorScene extends Phaser.Scene {
         })
 
         this.player = new Player(this, this.wallsLayer, 100, 100, this.SocketServer); // 创建玩家(自己)
-        if (!onlinePlayers[this.SocketServer.memberId]) {
-            onlinePlayers[this.SocketServer.memberId]  = this.player
-        } 
-
+        if (onlinePlayers[this.SocketServer.memberId]) {
+            onlinePlayers[this.SocketServer.memberId].destroy()
+            delete onlinePlayers[this.SocketServer.memberId];
+        }
+        onlinePlayers[this.SocketServer.memberId]  = this.player
+       
         this.bindPlayerByChests(this.player) 
         this.initEnemies(this.player)
     }
@@ -193,12 +193,13 @@ export class JuniorScene extends Phaser.Scene {
     initEnemies(player) {
         let self = this 
         const enemiesPoints = this.map.filterObjects("Enemies",  (obj) => obj.name === "EnemyPoint");
-        let items = enemiesPoints.map((enemyPoint, id) => new Monster(this, enemyPoint.x, enemyPoint.y, self.player, id) )
-    
+        let items = enemiesPoints.map((enemyPoint, id) => new Monster(this,this.wallsLayer, enemyPoint.x, enemyPoint.y, self.player, id) )
+    /**
         this.physics.add.collider(items, this.wallsLayer);
-        /** 
+       
         this.physics.add.collider(items, items);
-        this.physics.add.collider(self.player, items, function(obj1, obj2){
+         
+         *  this.physics.add.collider(self.player, items, function(obj1, obj2){
             obj1.getDamage(1)
             obj2.getDamage(1) 
             console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
@@ -212,7 +213,7 @@ export class JuniorScene extends Phaser.Scene {
                 // this.game.events.emit(EVENTS_NAME.chestLoot, {memberId: obj1.id}) // 加 通关条件 
                 obj1.getDamage(1)
                 obj2.getDamage(1) 
-                console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
+                // console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
             })
         })
 
@@ -244,7 +245,7 @@ export class JuniorScene extends Phaser.Scene {
                 obj1.setTarget(player) // 将玩家设置为怪物攻击目录
                 obj1.getDamage(1) // 加血
                 obj2.getDamage(1)
-                console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
+                // console.log("玩家  ",obj1.id, " 与小怪/敌人 互砍", obj2.id)
             })
         })
          
