@@ -53,7 +53,7 @@ export class JuniorScene extends Phaser.Scene {
         // 边界设置  是所有瓦片总和的宽高 否则镜头不跟随
         this.cameras.main.setBounds(0, 0, this.wallsLayer.width * 16, this.wallsLayer.height * 16); 
         //this.cameras.main.setSize(this.wallsLayer.width * 16, this.wallsLayer.height * 16);
-        this.cameras.main.startFollow(this.player); //开启相机跟随 玩家
+        this.cameras.main.startFollow(this.player, true); //开启相机跟随 玩家
 
         //this.cameras.main.setViewport(0,0, 600, 800) //位置 和 相机镜头视野大小
         //this.cameras.main.setZoom(2); // 2倍 相机缩放值

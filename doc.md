@@ -166,6 +166,14 @@ this.load.atlas('monsterAtlas', 'atlas/monster.png', 'atlas/monster.json'; // �
   }
   ```
 
+- tiled 软件 制作背景图
+```
+1.首先新建项目，图库层必须选择 CSV ，不然 phaser3 无法解析。
+2. 千万不要压缩 
+3. 插入图块 一定要选择嵌入地图
+4.在一些“墙”图块上设置自定义属性 collides 为 true，在代码可以根据这个属性开启碰撞检测。
+```
+
 - text: 用于添加文本
 
   ```javascript

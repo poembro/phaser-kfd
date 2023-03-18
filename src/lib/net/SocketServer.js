@@ -210,8 +210,6 @@ class SocketServer {
 
         
     onclose(v) {
-        //if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-        /**  */
         let memberId = parseInt(this.memberId) 
         self.fn({
             event:'PLAYER_CLOSE',
