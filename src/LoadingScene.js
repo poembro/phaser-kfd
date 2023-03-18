@@ -21,12 +21,21 @@ import GrassJSON from "./assets/tilemaps/json/Grass.json";
 import foodPNG from "./assets/spritesheets/food.png"
 import {SocketServer} from './lib/net/SocketServer';
 
+
+import virtualjoystickControllerPNG from "./assets/virtualjoystick/controller.png";
+import virtualjoystickBasePNG from "./assets/virtualjoystick/base.png";
+
+
 export class LoadingScene extends Phaser.Scene {
     constructor() {
         super("LoadingScene")
     }
 
     preload() {
+        this.load.image('virtualjoystick-controller', virtualjoystickControllerPNG)
+        this.load.image('virtualjoystick-base', virtualjoystickBasePNG)
+
+
         this.load.image("king", kingPNG);
 
         // 加载图集：.atlas(key [, textureURL] [, atlasURL] [, textureXhrSettings] [, atlasXhrSettings])

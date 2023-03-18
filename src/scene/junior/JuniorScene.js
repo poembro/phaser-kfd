@@ -59,18 +59,98 @@ export class JuniorScene extends Phaser.Scene {
         //this.cameras.main.setZoom(2); // 2倍 相机缩放值
         //this.cameras.main.setOrigin(0, 0); //设置中心点为原点
         this.findpath()
+
+
+        // 虚拟摇杆
+        this.renderJoystick() 
+        
+        // 虚拟攻击按键 
+        // 创建一个圆形 
+        this.virtualAttackButton = this.add.graphics();
+        this.virtualAttackButton.fillStyle(0x0077aa, 1);
+        this.virtualAttackButton.fillCircle(this.game.scale.width - 100, this.game.scale.height - 100, 30); 
+        this.virtualAttackButton.setInteractive(new Phaser.Geom.Circle(this.game.scale.width - 100, this.game.scale.height - 100, 30), Phaser.Geom.Circle.Contains);
+        
+
+        //this.virtualAttackButton.setBlendMode(Phaser.BlendModes.SCREEN);
+        this.virtualAttackButton.on("pointerup", (e)=>{
+              //console.log(" 按下了攻击键", e ) // pointerup
+              this.player.attackHandle(true)
+        },this)
+        this.virtualAttackButton.setScrollFactor(0)  // 将其固定在屏幕
+        this.cameras.main.scrollFactorX = 1;
+        this.cameras.main.scrollFactorY = 1;
+
+
+
+         //this.virtualAttackButton.x =  this.map.tileToWorldX(pointerTileX) + 200
+       // this.virtualAttackButton.y = this.map.tileToWorldY(pointerTileY); 
+       
     }
+
+    // 虚拟摇杆 start
+    baseJoystick = null 
+    controller = null
+    renderJoystick() {
+        const { width, height } = this.cameras.main
+
+        let x, y
+        if (width > 767) {
+        // tablet and desktop
+        x = width / 7
+        y = height / 1.25
+        } else {
+        // mobile
+        x = width / 6.5
+        y = height / 1.4
+        }
+        this.baseJoystick = this.physics.add.image(x, y, 'virtualjoystick-base')
+        this.controller = this.physics.add.image(x, y, 'virtualjoystick-controller')
+        this.setScaleFunc(this.baseJoystick, 1.25, 0.7)
+        this.setScaleFunc(this.controller, 1.25, 0.7)
+
+        this.joystick = this.joystickPlugin.add(this, { x: x, y: y, radius: 50,base: this.baseJoystick,thumb: this.controller})
+    }
+
+    setScaleFunc(sprite, tablet, mobile) {
+        const { width } = this.cameras.main
+        if (width > 767) {
+        sprite.setScale(tablet)
+        } else {
+        sprite.setScale(mobile)
+        }
+    }
+
+    movingPlayer(delta) {
+        if (this.joystick.forceX == 0 || this.joystick.forceY == 0) {
+            this.player.update() 
+            return
+        }
+
+        let idx = this.player.walkingIndexAdd()
+        let x = this.player.x +  0.001 * delta * this.joystick.forceX
+        let y = this.player.y +  0.001 * delta * this.joystick.forceY
+
+        //this.player.addWalkingAnims({ x: x, y: y, walkingIndex: idx})
+        //console.log("this.joystick.forceX", { x: x, y: y, walkingIndex: idx})
+        this.player.walkingHandle(parseInt(x), parseInt(y))
+        //this.player.rotation = this.joystick.rotation
+    }
+    // 虚拟摇杆  end
     
     // ltime 当前时间。一个高分辨率定时器值，如果它来自请求动画帧，或日期。现在如果使用SetTimeout。
     // delta 从上一帧开始的时间单位是毫秒。这是一个基于FPS速率的平滑和上限值
     update(ltime, delta) {
+        this.movingPlayer(delta)
         //this.findpathUpdate()
-        this.player.update() 
+        
         /**
         onlinePlayers.forEach((e, index) =>{
           e.update()
         }) */  
-       
+
+      
+ 
     }
  
 
@@ -137,7 +217,7 @@ export class JuniorScene extends Phaser.Scene {
                     onlinePlayers[data.memberId].getDamage(data.hp)
                 }
                 if (onlinePlayers[data.memberId] && data.typ === "attack_action") {
-                    onlinePlayers[data.memberId].attackHandle()
+                    onlinePlayers[data.memberId].attackHandle(false)
                 }
 
                 if (onlinePlayers[data.memberId] && data.typ === "chests_hp") {
@@ -267,7 +347,7 @@ export class JuniorScene extends Phaser.Scene {
     }
     // 自动寻路
     findpath() {
-        this.input.on('pointerup',this.handleClick, this);
+        //this.input.on('pointerup',this.handleClick, this);
  
         // 在点击的位置画个框 
         this.marker = this.add.graphics();

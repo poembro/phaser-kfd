@@ -35,6 +35,6 @@
   "dependencies": {
     "google-protobuf": "^3.21.2",
     "phaser": "^3.50.0",
-    "phaser3-vjoy-plugin": "^1.0.3"
+    "phaser3-rex-plugins": "^1.1.25"
   }
 }

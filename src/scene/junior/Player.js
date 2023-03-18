@@ -141,27 +141,8 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             isPush = true
         } else if (this.cursors.space.isDown) {
             if (this.autoIncrId % 4 == 0) {
-                let net = this.SocketServer
-                this.scene.game.events.emit(EVENTS_NAME.attack, (id, hp) => {
-                    // 自己攻击的上报 通知其他人界面的“我”加血了
-                    net.send({
-                        event: "PLAYER_BROADCAST",
-                        typ:"attack_hp",
-                        memberId:id,
-                        hp: hp,
-                    })
-                }) 
-
-                this.SocketServer.send({
-                    event: "PLAYER_BROADCAST",
-                    typ:"attack_action",
-                    memberId: this.id,
-                    x: this.x,
-                    y: this.y
-                })
+                this.attackHandle(true)
             }
- 
-            this.attackHandle()
         }
         
         if (isPush){
@@ -245,7 +226,27 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             })
         }
     }
-    attackHandle() { 
+    attackHandle(isAttack) { 
         this.anims.play("attack", true); // 攻击动画 
+        if (isAttack) {
+            let net = this.SocketServer
+            this.scene.game.events.emit(EVENTS_NAME.attack, (id, hp) => {
+                // 自己攻击的上报 通知其他人界面的“我”加血了
+                net.send({
+                    event: "PLAYER_BROADCAST",
+                    typ:"attack_hp",
+                    memberId:id,
+                    hp: hp,
+                })
+            })
+
+            this.SocketServer.send({
+                event: "PLAYER_BROADCAST",
+                typ:"attack_action",
+                memberId: this.id,
+                x: this.x,
+                y: this.y
+            })
+        }
     }
 }

@@ -7,7 +7,13 @@ import {LoadingScene} from "./LoadingScene";
 import {JuniorScene} from "./scene/junior/JuniorScene"; 
 
 import {UIScene} from "./UIScene";
-//import VirtualJoystickPlugin from 'phaser3-rex-plugins/plugins/virtualjoystick-plugin.js';
+import VirtualJoystickPlugin from 'phaser3-rex-plugins/plugins/virtualjoystick-plugin.js'
+
+
+
+const DEFAULT_WIDTH = document.documentElement.clientWidth
+const DEFAULT_HEIGHT = document.documentElement.clientHeight
+
 
 var game;
 window.onload = function () {
@@ -18,7 +24,7 @@ window.onload = function () {
     type: Phaser.AUTO,
     parent: 'game-container',
     backgroundColor: "#9bd4c3",
-    width: 600, // 游戏的宽度，单位为游戏像素。
+    width: DEFAULT_WIDTH, // 游戏的宽度，单位为游戏像素。
     height: 800, //游戏的高度，单位为游戏像素。
     // https://juejin.cn/post/6844904110785822734
     scale: {// 属性定义了Phaser的画布宽高，缩放。
@@ -57,9 +63,9 @@ window.onload = function () {
     winScore: 100,
     plugins:{
       global: [{
-        //key: 'rexVirtualJoystick',
-        //plugin: VirtualJoystickPlugin,
-        //start: true
+        key: 'VirtualJoystick',
+        plugin: VirtualJoystickPlugin,
+        mapping: 'joystickPlugin'
 
       }]
     }
