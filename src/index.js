@@ -25,7 +25,7 @@ window.onload = function () {
     parent: 'game-container',
     backgroundColor: "#9bd4c3",
     width: DEFAULT_WIDTH, // 游戏的宽度，单位为游戏像素。
-    height: 800, //游戏的高度，单位为游戏像素。
+    height: DEFAULT_HEIGHT, //游戏的高度，单位为游戏像素。
     // https://juejin.cn/post/6844904110785822734
     scale: {// 属性定义了Phaser的画布宽高，缩放。
       //mode: Scale.ScaleModes.NONE,// mode属性定义缩放模式   Scale.ScaleModes.NONE 不缩放，canvas保持width，height定义的宽高。
@@ -46,7 +46,9 @@ window.onload = function () {
       antialiasGL: false,
       pixelArt: true,
     },
-    
+    input:{
+      activePointers:2,
+    },
     callbacks: {
       preBoot: () => {}, //在引导序列开始时运行的函数。
       postBoot: () => {  }, //在引导序列末尾运行的函数。
@@ -65,7 +67,8 @@ window.onload = function () {
       global: [{
         key: 'VirtualJoystick',
         plugin: VirtualJoystickPlugin,
-        mapping: 'joystickPlugin'
+        mapping: 'joystickPlugin',
+        start: true
 
       }]
     }

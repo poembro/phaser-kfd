@@ -62,17 +62,22 @@ export class JuniorScene extends Phaser.Scene {
 
 
         // 虚拟摇杆
-        this.renderJoystick() 
-        
-        // 虚拟攻击按键 
+        this.virtualJoystick() 
+        this.virtualButton()
+    }
+    
+    virtualButton(){
+         // 虚拟攻击按键 
         // 创建一个圆形 
         this.virtualAttackButton = this.add.graphics();
-        this.virtualAttackButton.fillStyle(0x0077aa, 1);
-        this.virtualAttackButton.fillCircle(this.game.scale.width - 100, this.game.scale.height - 100, 30); 
-        this.virtualAttackButton.setInteractive(new Phaser.Geom.Circle(this.game.scale.width - 100, this.game.scale.height - 100, 30), Phaser.Geom.Circle.Contains);
+        this.virtualAttackButton.fillStyle(0xcccccc, 1);
+        let widtha = this.game.scale.width - 150
+        let heighta = this.game.scale.height - 150
+        this.virtualAttackButton.fillCircle(widtha, heighta, 40); 
+        this.virtualAttackButton.setInteractive(new Phaser.Geom.Circle(widtha, heighta, 40), Phaser.Geom.Circle.Contains);
         
 
-        //this.virtualAttackButton.setBlendMode(Phaser.BlendModes.SCREEN);
+        this.virtualAttackButton.setBlendMode(Phaser.BlendModes.SCREEN);
         this.virtualAttackButton.on("pointerup", (e)=>{
               //console.log(" 按下了攻击键", e ) // pointerup
               this.player.attackHandle(true)
@@ -80,36 +85,46 @@ export class JuniorScene extends Phaser.Scene {
         this.virtualAttackButton.setScrollFactor(0)  // 将其固定在屏幕
         this.cameras.main.scrollFactorX = 1;
         this.cameras.main.scrollFactorY = 1;
-
-
-
-         //this.virtualAttackButton.x =  this.map.tileToWorldX(pointerTileX) + 200
-       // this.virtualAttackButton.y = this.map.tileToWorldY(pointerTileY); 
-       
     }
-
     // 虚拟摇杆 start
     baseJoystick = null 
     controller = null
-    renderJoystick() {
+    virtualJoystick() {
         const { width, height } = this.cameras.main
-
         let x, y
         if (width > 767) {
-        // tablet and desktop
-        x = width / 7
-        y = height / 1.25
+            // tablet and desktop
+            x = width / 7
+            y = height / 1.25
         } else {
-        // mobile
-        x = width / 6.5
-        y = height / 1.4
+            // mobile
+            x = width / 6.5
+            y = height / 1.4
         }
         this.baseJoystick = this.physics.add.image(x, y, 'virtualjoystick-base')
         this.controller = this.physics.add.image(x, y, 'virtualjoystick-controller')
         this.setScaleFunc(this.baseJoystick, 1.25, 0.7)
         this.setScaleFunc(this.controller, 1.25, 0.7)
 
-        this.joystick = this.joystickPlugin.add(this, { x: x, y: y, radius: 50,base: this.baseJoystick,thumb: this.controller})
+        this.joystick = this.joystickPlugin.add(this, { 
+            x: x, y: y, 
+            radius: 50, 
+            base: this.baseJoystick, 
+            thumb: this.controller,
+            forceMin: 16,
+            enable: true 
+        })
+        this.joystick.setScrollFactor(0);
+        this.joystick.on('pointerup', function(pointer){
+            console.log("----pointerup---->", pointer)
+        });
+        this.joystick.on('pointerdown', function(pointer){
+            console.log("----pointerdown---->", pointer)
+        });
+        this.joystick.on('update', function(pointer){
+
+            console.log("----update--x-->",this.forceX, "----y---",this.forceY  )
+        });
     }
 
     setScaleFunc(sprite, tablet, mobile) {
@@ -122,19 +137,26 @@ export class JuniorScene extends Phaser.Scene {
     }
 
     movingPlayer(delta) {
-        if (this.joystick.forceX == 0 || this.joystick.forceY == 0) {
-            this.player.update() 
-            return
+        if (this.joystick.forceX != 0 || this.joystick.forceY != 0) {
+           
+            let x = this.player.x +  0.001 * delta * this.joystick.forceX
+            let y = this.player.y +  0.001 * delta * this.joystick.forceY
+            //this.player.rotation = this.joystick.rotation
+
+            //this.player.addWalkingAnims({ x: x, y: y, walkingIndex: this.player.walkingIndex})
+            
+            this.time.delayedCall(1 , () => {
+                this.player.addWalkingAnims({ x: x, y: y, walkingIndex: this.player.walkingIndex})
+                
+            })
         }
 
-        let idx = this.player.walkingIndexAdd()
-        let x = this.player.x +  0.001 * delta * this.joystick.forceX
-        let y = this.player.y +  0.001 * delta * this.joystick.forceY
-
-        //this.player.addWalkingAnims({ x: x, y: y, walkingIndex: idx})
+        //let idx = this.player.walkingIndexAdd()
         //console.log("this.joystick.forceX", { x: x, y: y, walkingIndex: idx})
-        this.player.walkingHandle(parseInt(x), parseInt(y))
+        //this.player.walkingHandle(parseInt(x), parseInt(y))
         //this.player.rotation = this.joystick.rotation
+
+        this.player.update() 
     }
     // 虚拟摇杆  end
     
