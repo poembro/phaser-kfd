@@ -51,7 +51,7 @@ window.onload = function () {
     },
     callbacks: {
       preBoot: () => {}, //在引导序列开始时运行的函数。
-      postBoot: () => {  }, //在引导序列末尾运行的函数。
+      postBoot: () => { sizeChanged();window.addEventListener('resize', sizeChanged, false);  }, //在引导序列末尾运行的函数。
     },
     canvasStyle: `display: block; width: 100%; height: 100%;`,
     autoFocus: true,
@@ -74,9 +74,10 @@ window.onload = function () {
     }
   };
   game = new Phaser.Game(Config);
+  window.game = game
   window.focus();
-  resize();
-  window.addEventListener('resize', resize, false); 
+  
+  
 }
 
 
@@ -98,10 +99,10 @@ function resize() {
 
 function sizeChanged() {
   // isBooted 指示游戏实例何时完成引导过程的标志。
-  if (window.game.isBooted) {
+  //if (window.game.isBooted) {
     setTimeout(() => {
       window.game.scale.resize(window.innerWidth, window.innerHeight);
       window.game.canvas.setAttribute("style", `display: block; width: ${window.innerWidth}px; height: ${window.innerHeight}px;`);
     }, 100);
-  }
+  //}
 }

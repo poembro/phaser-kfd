@@ -58,12 +58,15 @@ export class JuniorScene extends Phaser.Scene {
         //this.cameras.main.setViewport(0,0, 600, 800) //位置 和 相机镜头视野大小
         //this.cameras.main.setZoom(2); // 2倍 相机缩放值
         //this.cameras.main.setOrigin(0, 0); //设置中心点为原点
-        this.findpath()
+     
 
 
         // 虚拟摇杆
         this.virtualJoystick() 
         this.virtualButton()
+
+        // 自动寻路
+        this.findpath()
     }
     
     virtualButton(){
@@ -73,14 +76,16 @@ export class JuniorScene extends Phaser.Scene {
         this.virtualAttackButton.fillStyle(0xcccccc, 1);
         let widtha = this.game.scale.width - 150
         let heighta = this.game.scale.height - 150
-        this.virtualAttackButton.fillCircle(widtha, heighta, 40); 
-        this.virtualAttackButton.setInteractive(new Phaser.Geom.Circle(widtha, heighta, 40), Phaser.Geom.Circle.Contains);
+        this.virtualAttackButton.fillCircle(widtha, heighta, 60); 
+        this.virtualAttackButton.setInteractive(new Phaser.Geom.Circle(widtha, heighta, 60), Phaser.Geom.Circle.Contains);
         
-
+        //this.virtualAttackButton.setInteractive({useHandCursor:true})
         this.virtualAttackButton.setBlendMode(Phaser.BlendModes.SCREEN);
         this.virtualAttackButton.on("pointerup", (e)=>{
               //console.log(" 按下了攻击键", e ) // pointerup
               this.player.attackHandle(true)
+             
+              e.event.stopPropagation();
         },this)
         this.virtualAttackButton.setScrollFactor(0)  // 将其固定在屏幕
         this.cameras.main.scrollFactorX = 1;
@@ -90,6 +95,7 @@ export class JuniorScene extends Phaser.Scene {
     baseJoystick = null 
     controller = null
     virtualJoystick() {
+        let self = this
         const { width, height } = this.cameras.main
         let x, y
         if (width > 767) {
@@ -116,15 +122,22 @@ export class JuniorScene extends Phaser.Scene {
         })
         this.joystick.setScrollFactor(0);
         this.joystick.on('pointerup', function(pointer){
+            self.player.walkingStop(true)
             console.log("----pointerup---->", pointer)
+  
+            pointer.event.stopPropagation(); // 关闭事件冒泡
+
         });
         this.joystick.on('pointerdown', function(pointer){
             console.log("----pointerdown---->", pointer)
+            pointer.event.stopPropagation(); // 关闭事件冒泡
+
         });
         this.joystick.on('update', function(pointer){
 
             console.log("----update--x-->",this.forceX, "----y---",this.forceY  )
-        });
+
+        }, this);
     }
 
     setScaleFunc(sprite, tablet, mobile) {
@@ -142,13 +155,14 @@ export class JuniorScene extends Phaser.Scene {
             let x = this.player.x +  0.001 * delta * this.joystick.forceX
             let y = this.player.y +  0.001 * delta * this.joystick.forceY
             //this.player.rotation = this.joystick.rotation
-
+            x =  parseInt(x)
+            y = parseInt(y)
             //this.player.addWalkingAnims({ x: x, y: y, walkingIndex: this.player.walkingIndex})
-            
-            this.time.delayedCall(1 , () => {
-                this.player.addWalkingAnims({ x: x, y: y, walkingIndex: this.player.walkingIndex})
-                
-            })
+            if (!this.checkCollision(x, y)) {
+                //this.time.delayedCall(0 , () => {
+                    this.player.addWalkingAnims({ x: x, y: y, walkingIndex: this.player.walkingIndex})
+                //})
+            }
         }
 
         //let idx = this.player.walkingIndexAdd()
@@ -170,8 +184,6 @@ export class JuniorScene extends Phaser.Scene {
         onlinePlayers.forEach((e, index) =>{
           e.update()
         }) */  
-
-      
  
     }
  
@@ -369,7 +381,9 @@ export class JuniorScene extends Phaser.Scene {
     }
     // 自动寻路
     findpath() {
-        //this.input.on('pointerup',this.handleClick, this);
+        //this.input.setInteractive({ useHandCursor: true });
+
+        this.input.on('pointerup',this.handleClick, this);
  
         // 在点击的位置画个框 
         this.marker = this.add.graphics();
@@ -412,9 +426,13 @@ export class JuniorScene extends Phaser.Scene {
 
       
     checkCollision(x,y){
-        let tile = this.map.getTileAt(x, y);
-        if (tile) { 
-            return tile.properties.collide == true;
+        var pointerTileX = this.map.worldToTileX(x)
+        var pointerTileY = this.map.worldToTileY(y)
+        let tile = this.wallsLayer.getTileAt(pointerTileX, pointerTileY)  
+
+        //let tile = this.map.getTileAt(pointerTileX, pointerTileY);
+        if (tile) {
+            return tile.properties.collides == true;
         } 
         return false 
     }
@@ -429,7 +447,7 @@ export class JuniorScene extends Phaser.Scene {
         this.marker.setVisible(!this.checkCollision(pointerTileX, pointerTileY))
     }
 
-    handleClick(pointer){
+    handleClick(pointer, e){
       let self = this
       //TODO  清空其他待播放的走路动画
       self.player.walkingIndexAdd()
@@ -456,6 +474,8 @@ export class JuniorScene extends Phaser.Scene {
           self.moveCharacter(path);
       })
       this.finder.calculate(); // don't forget, otherwise nothing happens
+
+      pointer.event.stopPropagation();
     }
 
     moveCharacter (path){
