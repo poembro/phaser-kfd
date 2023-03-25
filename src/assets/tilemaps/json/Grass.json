@@ -553,9 +553,32 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "class":"Basics",
+         "draworder":"topdown",
+         "id":10,
+         "name":"Basics",
+         "objects":[
+                {
+                 "class":"BasicsPoint",
+                 "height":117.5,
+                 "id":22,
+                 "name":"BasicsPoint",
+                 "rotation":0,
+                 "visible":true,
+                 "width":90,
+                 "x":1547.5,
+                 "y":1607.5
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":10,
- "nextobjectid":22,
+ "nextlayerid":11,
+ "nextobjectid":23,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.9.2",

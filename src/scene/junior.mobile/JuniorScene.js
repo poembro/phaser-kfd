@@ -3,7 +3,6 @@ import Enemy  from "./Enemy";
 import Monster  from "./Monster";
 import {onlinePlayers} from '../../lib/net/SocketServer';
 import {EasyStar}  from "../../lib/easystar.js";
-import {BasicsScene} from "../basics/BasicsScene"; 
 
  
 // 一个基础场景类，可以扩展为您自己使用。默认方法三个 init() preload() create()。
@@ -34,22 +33,16 @@ export class JuniorScene extends Phaser.Scene {
             frames: this.anims.generateFrameNames('lizard', {start: 0, end: 3, prefix: 'lizard_m_run_anim_f', suffix: '.png' }),
             repeat: -1, frameRate: 10
         })
-
-
     }
     
-    props = null
     create(props) { 
-        this.scene.add('BasicsScene', BasicsScene, false, props);
-
-        this.props = props
         this.SocketServer = props.SocketServer
         // 先创建地图 props.name = Level-1 / Level-2
         this.initMap(props.name)
         this.initChests() // 初始化宝贝
         this.initPlayer(props.name) // 初始化玩家 和 敌人
         //this.initMonster() // 初始化 怪物 它必须在初始化玩家之后执行
-        this.initBasics()  // 初始化进入其他地图的大门
+       
 
 
         // 设置物理引擎检查碰撞范围 设置为横坐标瓦片总个数 
@@ -58,7 +51,7 @@ export class JuniorScene extends Phaser.Scene {
         // 设置相机
         this.cameras.main.setBackgroundColor('#000000')
         // 边界设置  是所有瓦片总和的宽高 否则镜头不跟随
-        this.cameras.main.setBounds(0, 0,  this.wallsLayer.width , this.wallsLayer.height );
+        this.cameras.main.setBounds(0, 0, this.wallsLayer.width * 16, this.wallsLayer.height * 16); 
         //this.cameras.main.setSize(this.wallsLayer.width * 16, this.wallsLayer.height * 16);
         this.cameras.main.startFollow(this.player, true); //开启相机跟随 玩家
 
@@ -69,7 +62,9 @@ export class JuniorScene extends Phaser.Scene {
 
 
         // 虚拟摇杆
-        this.virtualButton() 
+        this.virtualJoystick() 
+        this.virtualButton()
+
         // 自动寻路
         this.findpath()
     }
@@ -88,28 +83,108 @@ export class JuniorScene extends Phaser.Scene {
         this.virtualAttackButton.setBlendMode(Phaser.BlendModes.SCREEN);
         this.virtualAttackButton.on("pointerup", (e)=>{
               //console.log(" 按下了攻击键", e ) // pointerup
-              this.player.attackHandle(true) 
-              e.event.stopPropagation();  
-        }, this)
+              this.player.attackHandle(true)
+             
+              e.event.stopPropagation();
+        },this)
         this.virtualAttackButton.setScrollFactor(0)  // 将其固定在屏幕
         this.cameras.main.scrollFactorX = 1;
         this.cameras.main.scrollFactorY = 1;
-
-        this.virtualAttackButton.setDepth(1); //设置图片的层级，数值越大，则层级越高，会在其他元素之上渲染
-
     }
- 
+    // 虚拟摇杆 start
+    baseJoystick = null 
+    controller = null
+    virtualJoystick() {
+        let self = this
+        const { width, height } = this.cameras.main
+        let x, y
+        if (width > 767) {
+            // tablet and desktop
+            x = width / 7
+            y = height / 1.25
+        } else {
+            // mobile
+            x = width / 6.5
+            y = height / 1.4
+        }
+        this.baseJoystick = this.physics.add.image(x, y, 'virtualjoystick-base')
+        this.controller = this.physics.add.image(x, y, 'virtualjoystick-controller')
+        this.setScaleFunc(this.baseJoystick, 1.25, 0.7)
+        this.setScaleFunc(this.controller, 1.25, 0.7)
+
+        this.joystick = this.joystickPlugin.add(this, { 
+            x: x, y: y, 
+            radius: 50, 
+            base: this.baseJoystick, 
+            thumb: this.controller,
+            forceMin: 16,
+            enable: true 
+        })
+        this.joystick.setScrollFactor(0);
+        this.joystick.on('pointerup', function(pointer){
+            self.player.walkingStop(true)
+            console.log("----pointerup---->", pointer)
+  
+            pointer.event.stopPropagation(); // 关闭事件冒泡
+
+        });
+        this.joystick.on('pointerdown', function(pointer){
+            console.log("----pointerdown---->", pointer)
+            pointer.event.stopPropagation(); // 关闭事件冒泡
+
+        });
+        this.joystick.on('update', function(pointer){
+
+            console.log("----update--x-->",this.forceX, "----y---",this.forceY  )
+
+        }, this);
+    }
+
+    setScaleFunc(sprite, tablet, mobile) {
+        const { width } = this.cameras.main
+        if (width > 767) {
+        sprite.setScale(tablet)
+        } else {
+        sprite.setScale(mobile)
+        }
+    }
+
+    movingPlayer(delta) {
+        if (this.joystick.forceX != 0 || this.joystick.forceY != 0) {
+           
+            let x = this.player.x +  0.001 * delta * this.joystick.forceX
+            let y = this.player.y +  0.001 * delta * this.joystick.forceY
+            //this.player.rotation = this.joystick.rotation
+            x =  parseInt(x)
+            y = parseInt(y)
+            //this.player.addWalkingAnims({ x: x, y: y, walkingIndex: this.player.walkingIndex})
+            if (!this.checkCollision(x, y)) {
+                //this.time.delayedCall(0 , () => {
+                    this.player.addWalkingAnims({ x: x, y: y, walkingIndex: this.player.walkingIndex})
+                //})
+            }
+        }
+
+        //let idx = this.player.walkingIndexAdd()
+        //console.log("this.joystick.forceX", { x: x, y: y, walkingIndex: idx})
+        //this.player.walkingHandle(parseInt(x), parseInt(y))
+        //this.player.rotation = this.joystick.rotation
+
+        this.player.update() 
+    }
+    // 虚拟摇杆  end
     
     // ltime 当前时间。一个高分辨率定时器值，如果它来自请求动画帧，或日期。现在如果使用SetTimeout。
     // delta 从上一帧开始的时间单位是毫秒。这是一个基于FPS速率的平滑和上限值
     update(ltime, delta) {
+        this.movingPlayer(delta)
         //this.findpathUpdate()
-        this.player.update() 
+        
         /**
         onlinePlayers.forEach((e, index) =>{
           e.update()
-        }) 
-        */ 
+        }) */  
+ 
     }
  
 
@@ -128,7 +203,7 @@ export class JuniorScene extends Phaser.Scene {
         // 参数2 如果为真，它将启用碰撞。如果为false，则清除碰撞。
         // 参数3 更新后是否重新计算贴图面。
         // 参数4 瓷砖层使用。如果没有给定，则使用当前层。
-        this.wallsLayer.setCollisionByProperty({ collides: true }, true, true, "Walls" ); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
+        this.wallsLayer.setCollisionByProperty({ collides: true }, true, true,"Walls" ); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
     }
     
     initPlayer(levelName) {
@@ -208,29 +283,6 @@ export class JuniorScene extends Phaser.Scene {
         this.chests = chestPoints.map((chestPoint) => self.physics.add.sprite(chestPoint.x ,chestPoint.y ,"food",Math.floor(Math.random() * 8)).setScale(0.5))
     }
 
-    initBasics(){
-        let self = this 
-        const basicsPoints = this.map.filterObjects("Basics",  (obj) => obj.name === "BasicsPoint");
-        let items = basicsPoints.map((item, id) => self.physics.add.sprite(item.x ,item.y ,"food", Math.floor(Math.random() * 8)).setScale(2))
-        items.forEach((item) => {
-            // 检查玩家是否重叠
-            self.physics.add.overlap(self.player, item, (obj1, obj2) => { 
-                console.log("检查玩家是否重叠", obj1, obj2)
-                self.toBasicsScene() // 调整场景
-            })
-        })
-    }
-
-    toBasicsScene(){
-
-        this.scene.start('BasicsScene', this.props); 
-        this.game.scene.pause("JuniorScene") // 暂停游戏场景 
-
-        this.scene.remove('JuniorScene'); 
-
-        // this.scene.launch('BasicsScene', this.props);
-    }
-
     bindPlayerByChests(player) { // 绑定玩家与宝箱的物理碰撞关系
         this.chests.forEach((item) => {
             // 检查玩家是否与任何宝箱重叠
@@ -252,12 +304,11 @@ export class JuniorScene extends Phaser.Scene {
     }
 
 
-
     initEnemies(player) {
         let self = this 
         const enemiesPoints = this.map.filterObjects("Enemies",  (obj) => obj.name === "EnemyPoint");
         let items = enemiesPoints.map((enemyPoint, id) => new Monster(this,this.wallsLayer, enemyPoint.x, enemyPoint.y, self.player, id) )
-        /**
+    /**
         this.physics.add.collider(items, this.wallsLayer);
        
         this.physics.add.collider(items, items);
@@ -332,13 +383,7 @@ export class JuniorScene extends Phaser.Scene {
     findpath() {
         //this.input.setInteractive({ useHandCursor: true });
 
-        this.input.on('pointerup', (pointer, e) => {
-            if (e.length > 0) {
-                return
-            }
-             
-            this.handleClick(pointer, e) 
-        }, this).stopPropagation();
+        this.input.on('pointerup',this.handleClick, this);
  
         // 在点击的位置画个框 
         this.marker = this.add.graphics();

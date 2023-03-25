@@ -11,20 +11,19 @@ import lizardAtlasPNG from "./assets/spritesheets/lizard.png";
 import lizardAtlasJSON from "./assets/spritesheets/lizard.json";
 
 
-
-
 // tiled 软件导出的json 地图
 import GrassPNG from "./assets/tilemaps/json/Grass.png"; 
 import GrassJSON from "./assets/tilemaps/json/Grass.json";
 
 
 import foodPNG from "./assets/spritesheets/food.png"
-import {SocketServer} from './lib/net/SocketServer';
 
 
 import virtualjoystickControllerPNG from "./assets/virtualjoystick/controller.png";
 import virtualjoystickBasePNG from "./assets/virtualjoystick/base.png";
 
+
+import {SocketServer} from './lib/net/SocketServer';
 
 export class LoadingScene extends Phaser.Scene {
     constructor() {
@@ -40,7 +39,7 @@ export class LoadingScene extends Phaser.Scene {
 
         // 加载图集：.atlas(key [, textureURL] [, atlasURL] [, textureXhrSettings] [, atlasXhrSettings])
         this.load.atlas("a-king", kingAtlasPNG, kingAtlasJSON) // 玩家
-        this.load.atlas("lizard", lizardAtlasPNG,lizardAtlasJSON) // 蜥蜴 
+        this.load.atlas("lizard", lizardAtlasPNG, lizardAtlasJSON) // 蜥蜴 
  
      
         // 读取assets/sprites/fire.json文件，并命名为fire，第三个参数则是图片的路径
@@ -86,9 +85,9 @@ export class LoadingScene extends Phaser.Scene {
         var text = this.add.text(10, 10, 'Please login to play', { color: 'white', fontFamily: 'Arial', fontSize: '32px '});
         var element = this.add.dom(400, 600).createFromCache('nameform');
  
-        element.setPerspective(800);
+        element.setPerspective(800); // 设置 视角
         element.addListener('click');
-        element.on('click', function (event) { 
+        element.on('click', function (event) {
             if (event.target.name != 'loginButton') {
                 return
             } 
@@ -112,7 +111,13 @@ export class LoadingScene extends Phaser.Scene {
                 //  Tween the login form out
                 this.scene.tweens.add({ targets: element.rotate3d, x: 1, w: 90, duration: 3000, ease: 'Power3' });
 
-                this.scene.tweens.add({ targets: element, scaleX: 2, scaleY: 2, y: 700, duration: 2000, ease: 'Power3',
+                this.scene.tweens.add({ targets: element, 
+                    scaleX: 2, 
+                    scaleY: 2, 
+                    y: 700, 
+                    delay: 0, // 多久后开始动画
+                    duration: 2000, // 动画过程耗时
+                    ease: 'Power3', // 缓动功能。如果未设置，则默认为Phaser.Easing.Default，默认为Phaser.Easing.Linear.None，但可以覆盖
                     onComplete: () =>{
                         element.setVisible(false); 
                         self.joinWorld(net)

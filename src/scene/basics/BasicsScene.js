@@ -39,7 +39,7 @@ export class BasicsScene extends Phaser.Scene {
         // 1. 先创建地图
         this.initMap(props.name);
 
-        this.player = new Player(this, this.wallsLayer, 0, 0, "我"); // 创建玩家(自己)
+        this.player = new Player(this, this.wallsLayer, 100, 100, "我"); // 创建玩家(自己)
         this.initChests() 
         this.initEnemies()
         //this.initCamera()
@@ -49,36 +49,62 @@ export class BasicsScene extends Phaser.Scene {
         // 设置相机
         this.cameras.main.setBackgroundColor('#000000')
         // 边界设置  是所有瓦片总和的宽高 否则镜头不跟随
-        this.cameras.main.setBounds(0, 0, this.wallsLayer.width * 16, this.wallsLayer.height * 16); 
+        this.cameras.main.setBounds(0, 0, this.wallsLayer.width , this.wallsLayer.height ); 
         this.cameras.main.startFollow(this.player); //开启相机跟随 玩家
 
         this.findpath()
+         // 虚拟摇杆
+        this.virtualButton() 
     }
 
-  
+      
+    virtualButton(){
+        // 虚拟攻击按键 
+       // 创建一个圆形 
+       this.virtualAttackButton = this.add.graphics();
+       this.virtualAttackButton.fillStyle(0xcccccc, 1);
+       let widtha = this.game.scale.width - 150
+       let heighta = this.game.scale.height - 150
+       this.virtualAttackButton.fillCircle(widtha, heighta, 60); 
+       this.virtualAttackButton.setInteractive(new Phaser.Geom.Circle(widtha, heighta, 60), Phaser.Geom.Circle.Contains);
+       
+       //this.virtualAttackButton.setInteractive({useHandCursor:true})
+       this.virtualAttackButton.setBlendMode(Phaser.BlendModes.SCREEN);
+       this.virtualAttackButton.on("pointerup", (e)=>{
+             //console.log(" 按下了攻击键", e ) // pointerup
+             this.player.attackHandle(true) 
+             e.event.stopPropagation();  
+       }, this)
+       this.virtualAttackButton.setScrollFactor(0)  // 将其固定在屏幕
+       this.cameras.main.scrollFactorX = 1;
+       this.cameras.main.scrollFactorY = 1;
+
+       this.virtualAttackButton.setDepth(1); //设置图片的层级，数值越大，则层级越高，会在其他元素之上渲染
+
+   }
+
     update() {
       this.player.update();
     }
 
-    initMap(levelName) {
+    initMap(levelName) { 
       // 创建1个地图
       this.map = this.make.tilemap({key: levelName, tileWidth: 16, 
         tileHeight: 16,width:100,height:100,
-        insertNull:false //如果你有一个大的稀疏分布的地图，并且贴图数据不需要改变，那么将这个值设置为true将有助于减少内存消耗。然而，如果你的地图很小，或者你需要动态更新贴图，那么就保留默认值。
-      });
+        insertNull:true //如果你有一个大的稀疏分布的地图，并且贴图数据不需要改变，那么将这个值设置为true将有助于减少内存消耗。然而，如果你的地图很小，或者你需要动态更新贴图，那么就保留默认值。
+      }); 
 
       this.tileset = this.map.addTilesetImage("Grass", "Grass") //往空地图添加 草地 图片
       this.groundLayer = this.map.createLayer("Ground", this.tileset, 0, 0); // 地面图层
       this.wallsLayer = this.map.createLayer("Walls", this.tileset, 0, 0);  // 墙 图层
-      
       // 参数1   应该检查的具有tile属性和相应值的对象。
       // 参数2 如果为真，它将启用碰撞。如果为false，则清除碰撞。
       // 参数3 更新后是否重新计算贴图面。
       // 参数4 瓷砖层使用。如果没有给定，则使用当前层。
-      this.wallsLayer.setCollisionByProperty({ collides: true }, true, true,"Walls" ); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
+      this.wallsLayer.setCollisionByProperty({ collides: true }, true, true, "Walls"); // 碰撞检查 前提是在Tiled软件中设置某图块，自定义属性为collides  
   
       // 设置物理引擎检查碰撞范围
-      this.physics.world.setBounds(0, 0, 16*100, 16*100);
+      this.physics.world.setBounds(0, 0, this.wallsLayer.width , this.wallsLayer.height );
  
       this.showDebugWalls();
     }
@@ -140,10 +166,16 @@ export class BasicsScene extends Phaser.Scene {
     }
 
 
-
      // 自动寻路
     findpath() {
-        this.input.on('pointerup',this.handleClick, this);
+        this.input.on('pointerup', (pointer, e) => {
+            if (e.length > 0) {
+                return
+            }
+             
+            this.handleClick(pointer, e) 
+        }, this).stopPropagation();
+
         this.finder = new EasyStar.js();
 
         var grid = [];
@@ -182,6 +214,9 @@ export class BasicsScene extends Phaser.Scene {
 
     handleClick(pointer){
       let self = this
+       //TODO  清空其他待播放的走路动画
+       self.player.walkingIndexAdd()
+
       var x = this.cameras.main.scrollX + pointer.x;
       var y = this.cameras.main.scrollY + pointer.y;
       var toX = Math.floor(x/16);
@@ -219,30 +254,20 @@ export class BasicsScene extends Phaser.Scene {
           });
         }
    
-        // 暂停动画
-        tweens.push({targets: this.player, x:{value: 0}, y:{value: 0}})
-        tweens.forEach((e, index) =>{
-          // 计算朝向 
-          let x =  e.x.value
-          let y =  e.y.value
-   
-          self.time.delayedCall(100 * index, () => {
-               //采用物理引擎帧动画 
-              e.targets.addWalkingAnims({ x: x, y: y})
-          })
-        })
+      // 暂停动画
+      tweens.push({targets: self.player, x:{value: 0}, y:{value: 0}})
+      let idx = self.player.walkingIndex
+      tweens.forEach((e, index) =>{
+        // 计算朝向 
+        let x = e.x.value
+        let y = e.y.value 
+        self.time.delayedCall(100 * index, () => {
+            e.targets.addWalkingAnims({ x: x, y: y, walkingIndex: idx})
+            
+         })
+      })
     }
-
-    findpathUpdate() {
-      var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main) 
-      // 世界地图中的xy坐标 映射到  瓦片 xy
-      var pointerTileX = this.map.worldToTileX(worldPoint.x);
-      var pointerTileY = this.map.worldToTileY(worldPoint.y);
-      this.marker.x = this.map.tileToWorldX(pointerTileX);
-      this.marker.y = this.map.tileToWorldY(pointerTileY);
-      this.marker.setVisible(!this.checkCollision(pointerTileX,pointerTileY))
-    }
-
+  
 
     checkCollision(x,y){
       let tile = this.map.getTileAt(x, y);

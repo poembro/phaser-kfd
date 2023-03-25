@@ -11,6 +11,7 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
    
     speed = 100 
     
+    walkingIndex = 0 // 走路标识 防止走了一半中途打断
 
     constructor(scene, worldLayer, x, y, uuid) {
         super(scene, x, y, "king");
@@ -118,12 +119,16 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         this.hpValue.setText(this.hp + "");
         if (this.hp <= 0) {
             console.log("英雄 血量小于等于0 游戏结束")
-            this.scene.game.events.emit(EVENTS_NAME.gameEnd, GameStatus.LOSE);
+            this.scene.game.events.emit(EVENTS_NAME.gameEnd, {status:GameStatus.LOSE,scene :"BasicsScene" });
         }
     }
     walkingAnims = []
     addWalkingAnims(data){
-        this.walkingAnims.push(data)
+        if (this.walkingIndex == data.walkingIndex) this.walkingAnims.push(data)
+    }
+    walkingIndexAdd() {
+        this.walkingAnims = []
+        return this.walkingIndex++;
     }
     update() { 
         let isPush = false // 是否需要上报
@@ -175,6 +180,9 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
         //this.hpValue.setOrigin(0.8, 0.5);
     }
     netEventHandle(data) {
+        if (data.walkingIndex != this.walkingIndex) {
+            return
+        }
         this.walkingHandle(data.x, data.y) 
     }
 
@@ -184,23 +192,22 @@ export default class Player extends Physics.Arcade.Sprite {   //cursors = Phaser
             this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
             this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移
             this.anims.play("left", true) 
-            console.log("----播放向左--")
+            // console.log("----播放向左--")
         } else if ( x > this.x ) {
             this.body.setVelocityX(this.speed)//正值使物体向右移动, 值的绝对值越大，速度越快
             this.anims.play("right", true);
-            console.log("----播放向右--")
+            // console.log("----播放向右--")
         } else if (y > this.y) {
             this.body.setVelocityY(110) // 注意设置该参数，网络同步时 该物体将不受控制 
             this.anims.play("turn", true) 
-            console.log("----播放向下--")
+            // console.log("----播放向下--")
         } else if (y < this.y) {
             this.body.setVelocityY(-this.speed) 
             this.anims.play("turn", true);
-            console.log("----播放向上--")
+            // console.log("----播放向上--")
         }
-
         if (x == y && y == 0) { // 暂停回正动画
-            this.anims.play("turn", true);
+            this.walkingStop(true)
         } else { 
             this.setPosition(x, y)  //通用设置位置  
         }
