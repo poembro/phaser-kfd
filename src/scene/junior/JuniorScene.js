@@ -328,16 +328,28 @@ export class JuniorScene extends Phaser.Scene {
         //console.log("---------","x",x, "y",y, tile)
         return tile.index;
     }
+
+    // 记录上次点击时间
+    lastClickTime = 0
+
     // 自动寻路
     findpath() {
-        //this.input.setInteractive({ useHandCursor: true });
-
+        //this.input.setInteractive({ useHandCursor: true }); 
         this.input.on('pointerup', (pointer, e) => {
             if (e.length > 0) {
                 return
             }
              
-            this.handleClick(pointer, e) 
+            // 记录点击时间
+            let currentTime = this.time.now;
+
+            // 判断是否为双击事件
+            if (currentTime - this.lastClickTime < 300) {
+                // 处理双击事件
+                //console.log('double click!');
+                this.handleClick(pointer, e) 
+            }
+            this.lastClickTime = currentTime; 
         }, this).stopPropagation();
  
         // 在点击的位置画个框 

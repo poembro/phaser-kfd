@@ -72,8 +72,8 @@ class SocketServer {
 
     onopen(evt) {
         // 上报位置. 
-        let x = this.getRnd(3200,3268)
-        let y = this.getRnd(3480,34900)
+        let x = this.getRnd(10,100)
+        let y = this.getRnd(10,100)
         this.send({
             event:'PLAYER_FIRST_POS',
             x: x,
@@ -120,17 +120,16 @@ class SocketServer {
                 let  tmps  = pushPb.PosResp.deserializeBinary(p.getBody())
                 tmps.getDataList().forEach((v) => {
                     let dst = v.getOpsList()
-                    if (dst.length != 6) {
+                    //if (dst.length != 6) {
                       console.log("------",dst)
-                      return
-                    }
+                     // return
+                    //}
                     //console.log(dst)
                     self.fn({
                         event:'PLAYER_MOVED',
                         memberId:dst[0],
                         x: dst[1],
                         y:dst[2],
-                        action:dst[3],
                     })
                 })
                 break
@@ -152,9 +151,9 @@ class SocketServer {
             let posReqPb = new pushPb.PosReq()
             posReqPb.addOps(data.x,1)
             posReqPb.addOps(data.y,2)
-            posReqPb.addOps(1,3)  //朝向
-            posReqPb.addOps(0,4)   
-            posReqPb.addOps(0,5)  
+            //posReqPb.addOps(1,3)  //朝向
+            //posReqPb.addOps(0,4)   
+            //posReqPb.addOps(0,5)  
             let tdata= posReqPb.serializeBinary()
             pb.setBody(tdata)
             let body = pb.serializeBinary()
@@ -170,9 +169,9 @@ class SocketServer {
             let posReqPb2 = new pushPb.PosReq()
             posReqPb2.addOps(parseInt(data.x),1)
             posReqPb2.addOps(parseInt(data.y),2)
-            posReqPb2.addOps(0,3)  //动作: 如 方位/朝向
-            posReqPb2.addOps(0,4)  // 舞动
-            posReqPb2.addOps(0,5) 
+            //posReqPb2.addOps(0,3)  //动作: 如 方位/朝向
+            //posReqPb2.addOps(0,4)  // 舞动
+            //posReqPb2.addOps(0,5) 
             let tdata2= posReqPb2.serializeBinary()
             pb2.setBody(tdata2)
             let body = pb2.serializeBinary()
