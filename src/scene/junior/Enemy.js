@@ -73,7 +73,43 @@ export default class Enemy extends Physics.Arcade.Sprite {
         this.hpValue.setPosition(x -20, (y - 60));
         //this.hpValue.setOrigin(0.8, 0.5); 
     }
-  
+    messages = []
+ 
+    sendMessage(msg) {
+        let msgText = this.scene.add.text( this.x -20, this.y - 90, msg, { fontSize: '8px', color: '#ffffff' }).setAlpha(0);
+        
+        this.scene.time.delayedCall(1000 * 5, () => {
+            msgText.destroy(); 
+            
+        })
+        this.messages.push(msgText);
+    }
+
+    showMessages(x,y) {
+        /**
+        // Update messages 
+        let len = this.messages.length;
+            
+        if(len > 20) {
+            let items = this.messages.splice(len -1 ,1);
+            for (let j=0; j < items; j++ ) {
+                let msg = items[j]
+                if (msg) items[j].alpha = 0;   // 超出显示长度，直接隐藏
+            }
+        }
+ */
+        this.messages.reverse();
+		for(let i = 0, len = this.messages.length; i<len; i++) {
+            let msg = this.messages[i];
+            if (msg) {
+                msg.y = y - 90 - (i * 20)
+                msg.x = x - 20
+                msg.setAlpha(1)
+            }
+		}
+		this.messages.reverse();
+    }
+
     initEvents() {
         // 键盘事件
         this.attackHandler = (fn) => {
@@ -140,6 +176,7 @@ export default class Enemy extends Physics.Arcade.Sprite {
 
     walkingHandle(x, y) {
         this.showNickname(x, y) 
+        this.showMessages(x, y) 
         if ( x < this.x) {
             this.body.setVelocityX(-this.speed) // 负值使物体向左移动。
             this.body.setOffset(48, 15) //对象图片空白较大,用offset使角色进行偏移

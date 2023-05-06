@@ -29,7 +29,7 @@ export class LoadingScene extends Phaser.Scene {
     constructor() {
         super("LoadingScene")
     }
-
+ 
     preload() {
         this.load.image('virtualjoystick-controller', virtualjoystickControllerPNG)
         this.load.image('virtualjoystick-base', virtualjoystickBasePNG)

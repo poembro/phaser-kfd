@@ -72,11 +72,9 @@ window.onload = function () {
       }]
     }
   };
-  game = new Phaser.Game(Config);
+  game = new Phaser.Game(Config)
   window.game = game
-  window.focus();
-  
-  
+  window.focus()
 }
 
 

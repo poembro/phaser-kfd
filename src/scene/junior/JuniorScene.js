@@ -1,6 +1,8 @@
 import  Player  from "./Player"; 
 import Enemy  from "./Enemy";
 import Monster  from "./Monster";
+import Message  from "./Message";
+import AutoFindPath  from "./AutoFindPath";
 import {onlinePlayers} from '../../lib/net/SocketServer';
 import {EasyStar}  from "../../lib/easystar.js";
 import {BasicsScene} from "../basics/BasicsScene"; 
@@ -71,7 +73,12 @@ export class JuniorScene extends Phaser.Scene {
         // 虚拟摇杆
         this.virtualButton() 
         // 自动寻路
-        this.findpath()
+       // this.findpath()
+
+        this.npc = new Message(this, 200, 200, 'king');
+        // 自动寻路
+        this.AutoFindPath = new AutoFindPath(this)
+        this.AutoFindPath.findpath()
     }
     
     virtualButton(){
@@ -156,36 +163,40 @@ export class JuniorScene extends Phaser.Scene {
             }
 
             if (data.event === 'PLAYER_MOVED') {
-                let otherPlayer = null
-                if (!onlinePlayers[data.memberId]) {
+                let otherPlayer = onlinePlayers[data.memberId]
+                if (!otherPlayer) {
                     otherPlayer =  new Enemy(self, self.wallsLayer, 150, 150, self.player, data.memberId)
                     onlinePlayers[data.memberId] = otherPlayer
                     
                     self.bindPlayerByChests(otherPlayer)  
                     //self.bindPlayerByMonster(otherPlayer) 
-                } else {
-                    otherPlayer = onlinePlayers[data.memberId]
                 }
                 //otherPlayer.addWalkingAnims({ x: data.x, y: data.y})
                 otherPlayer.netEventHandle(data) // 去处理网络数据
+                otherPlayer.sendMessage("坐标 网络数据 x:" ) 
             }
 
             if (data.event === 'PLAYER_BROADCAST') {
+                let otherPlayer = onlinePlayers[data.memberId]
                 // console.log('PLAYER_BROADCAST'); 
-                if (onlinePlayers[data.memberId] && data.typ === "attack_hp") {
-                    onlinePlayers[data.memberId].getDamage(data.hp)
+                if (otherPlayer && data.typ === "attack_hp") {
+                    otherPlayer.getDamage(data.hp)
                 }
-                if (onlinePlayers[data.memberId] && data.typ === "attack_action") {
-                    onlinePlayers[data.memberId].attackHandle(false)
-                }
-
-                if (onlinePlayers[data.memberId] && data.typ === "chests_hp") {
-                    onlinePlayers[data.memberId].addHP(false)
+                if (otherPlayer && data.typ === "attack_action") {
+                    otherPlayer.attackHandle(false)
                 }
 
-                if (onlinePlayers[data.memberId] && data.typ === "walking_stop") {
-                    onlinePlayers[data.memberId].walkingStop(false)
+                if (otherPlayer && data.typ === "chests_hp") {
+                    otherPlayer.addHP(false)
+                }
+
+                if (otherPlayer && data.typ === "walking_stop") {
+                    otherPlayer.walkingStop(false)
                 } 
+
+                
+
+
             }
         })
 
@@ -316,6 +327,7 @@ export class JuniorScene extends Phaser.Scene {
 
 
     ///////////////////////////自动寻路///////////////////////// 
+   /**
     getTileID(x,y){ 
         // Game.map.getTileAt(x, y); 该方法有缓存  及其恶心
         let tile = this.wallsLayer.getTileAt(x, y)  
@@ -475,7 +487,8 @@ export class JuniorScene extends Phaser.Scene {
             
          })
       })
-
+      }
+    */
       //console.log("this.player.walkingStop() 暂停动画 ")
       /**  间补动画移动人物 
       this.scene.scene.tweens.timeline({
@@ -491,7 +504,7 @@ export class JuniorScene extends Phaser.Scene {
           }
       }); 
      */
-    }
+
 
  
 }
